@@ -1,0 +1,14 @@
+{
+  "name": "pixelvault",
+  "version": "1.0.0",
+  "description": "PixelVault root package for deployment",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "build": "cd frontend && npm run build"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
