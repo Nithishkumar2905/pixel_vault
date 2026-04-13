@@ -124,9 +124,9 @@ export default function PhotoViewPage() {
         </button>
 
         <div
+          className="photo-view-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 380px',
             gap: '2rem',
             alignItems: 'start',
           }}
@@ -289,6 +289,7 @@ export default function PhotoViewPage() {
 
         {/* Mobile responsive override */}
         <style>{`
+          .photo-view-grid { grid-template-columns: 1fr 380px; }
           @media (max-width: 900px) {
             .photo-view-grid { grid-template-columns: 1fr !important; }
           }
