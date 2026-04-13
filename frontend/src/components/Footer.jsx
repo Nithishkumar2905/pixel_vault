@@ -192,7 +192,7 @@ export default function Footer() {
               gap: '0.3rem',
             }}
           >
-            Made with <Heart size={12} style={{ color: '#F43F5E', fill: '#F43F5E' }} /> for photographers
+            Made for photographers
           </p>
         </div>
       </div>
