@@ -107,12 +107,12 @@ export default function Navbar() {
         <div
           style={{
             position: 'fixed',
-            top: 68,
+            top: 64, /* Matching adjusted navbar height */
             left: 0,
             right: 0,
-            background: 'rgba(2, 6, 23, 0.98)',
+            background: 'rgba(255, 255, 255, 0.98)',
             backdropFilter: 'blur(20px)',
-            borderBottom: '1px solid rgba(99,102,241,0.15)',
+            borderBottom: '1px solid rgba(17, 24, 39, 0.08)',
             padding: '1rem 1.5rem',
             zIndex: 49,
             display: 'flex',

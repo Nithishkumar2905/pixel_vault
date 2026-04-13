@@ -151,7 +151,7 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
               className="btn btn-secondary btn-sm"
               style={{ gap: '0.3rem', fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}
             >
-              <Eye size={12} /> View
+              <Eye size={12} /> <span className="hide-on-mobile">View</span>
             </Link>
           )}
 
