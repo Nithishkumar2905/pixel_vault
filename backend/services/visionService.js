@@ -22,6 +22,9 @@ export const analyzeImage = async (imageUrl) => {
             {
               type: "LABEL_DETECTION",
               maxResults: 10
+            },
+            {
+              type: "SAFE_SEARCH_DETECTION"
             }
           ]
         }
@@ -47,11 +50,21 @@ export const analyzeImage = async (imageUrl) => {
       throw new Error(`Vision image error: ${data.responses[0].error.message}`)
     }
 
+    const safeSearch = data.responses[0]?.safeSearchAnnotation
+    let isExplicit = false
+    if (safeSearch) {
+      const badLevels = ['LIKELY', 'VERY_LIKELY']
+      if (badLevels.includes(safeSearch.adult) || badLevels.includes(safeSearch.violence) || badLevels.includes(safeSearch.racy)) {
+        isExplicit = true
+        console.log('Vision AI: Explicit content detected.', safeSearch)
+      }
+    }
+
     const labels = data.responses[0]?.labelAnnotations || []
 
     if (labels.length === 0) {
       console.log('Vision AI: No labels detected in image.')
-      return { tags: [], description: '' }
+      return { tags: [], description: '', isExplicit }
     }
 
     // Convert labels to a simple array of strings as tags
@@ -62,7 +75,7 @@ export const analyzeImage = async (imageUrl) => {
     const description = topLabels.length > 0 ? `A view showcasing ${topLabels.join(', ')}.` : ''
 
     console.log('Vision AI successfully extracted tags:', tags)
-    return { tags, description }
+    return { tags, description, isExplicit }
   } catch (error) {
     console.error('Vision API Error:', error.message)
 
@@ -83,6 +96,7 @@ export const analyzeImage = async (imageUrl) => {
     return {
       tags: contextualTags,
       description: fallbackDesc,
+      isExplicit: false,
       isFallback: true
     }
   }

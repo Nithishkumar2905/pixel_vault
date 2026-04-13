@@ -7,13 +7,29 @@ export const uploadPhoto = async (req, res, next) => {
 
     if (!imageUrl) return res.status(400).json({ success: false, message: 'Image URL is required' })
 
-    // Immediately insert the photo without tags and description first to ensure it succeeds fast
+    // Synchronously check the image using Vision AI before inserting it into DB
+    console.log('Analyzing image for explicit content and generating tags...');
+    const aiData = await analyzeImage(imageUrl);
+
+    if (aiData.isExplicit) {
+      console.log('Blocked upload due to explicit content.');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Explicit content (such as nude, sexual, or violent content) detected. Please change the image.' 
+      });
+    }
+
+    const finalDescription = description || aiData.description;
+    const userTags = tags ? tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
+    const mergedTags = [...new Set([...userTags, ...(aiData.tags || [])])];
+    const finalTags = mergedTags.length > 0 ? mergedTags : ['photography', 'portfolio'];
+
     const photoData = {
       user_id: req.user.id,
       image_url: imageUrl,
       title: title || 'Untitled',
-      description: description || null,
-      tags: tags ? tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [],
+      description: finalDescription || null,
+      tags: finalTags,
     }
 
     const scopedClient = createScopedClient(req.token)
@@ -35,26 +51,6 @@ export const uploadPhoto = async (req, res, next) => {
 
     const photo = result?.[0] || result
 
-    // Asynchronously trigger AI processing in the background (fire-and-forget for speed, but logged)
-    analyzeImage(imageUrl).then(async (aiData) => {
-      console.log('AI Analysis Result background success:', aiData)
-      
-      const finalDescription = description || aiData.description
-      const userTags = tags ? tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : []
-      const mergedTags = [...new Set([...userTags, ...aiData.tags])]
-      const finalTags = mergedTags.length > 0 ? mergedTags : ['photography', 'portfolio']
-      
-      const { error: updateError } = await createScopedClient(req.token)
-        .from('photos')
-        .update({ description: finalDescription, tags: finalTags })
-        .eq('id', photo.id)
-      
-      if (updateError) console.error('Error updating photo with AI tags:', updateError.message)
-      else console.log('Successfully updated photo with AI tags for ID:', photo.id)
-    }).catch(aiError => {
-       console.error('Background API error failed completely:', aiError.message)
-    })
-
-    res.status(201).json({ success: true, photo, message: 'Photo uploaded successfully. AI processing in background.' })
+    res.status(201).json({ success: true, photo, message: 'Photo uploaded successfully.' })
   } catch (err) { next(err) }
 }
