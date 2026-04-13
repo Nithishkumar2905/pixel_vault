@@ -18,6 +18,8 @@ export default function PhotoViewPage() {
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
+    window.scrollTo(0, 0)
+    
     const fetch = async () => {
       try {
         const data = await photoService.getById(id)
