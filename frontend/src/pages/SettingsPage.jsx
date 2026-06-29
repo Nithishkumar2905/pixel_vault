@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { User, MapPin, Globe, Camera, Save, ArrowLeft, X, Check } from 'lucide-react'
+import { User, MapPin, Globe, Camera, Save, ArrowLeft, X, Check, Shield, Bell, Key, HardDrive, AlertTriangle } from 'lucide-react'
 import Cropper from 'react-easy-crop'
 import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
-import api from '../services/api'
 
 // Helper to extract a cropped image from html canvas
 const createImage = (url) =>
@@ -59,6 +58,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [activeTab, setActiveTab] = useState('general')
   
   // Crop States
   const [imageSrc, setImageSrc] = useState(null)
@@ -138,11 +138,9 @@ export default function SettingsPage() {
       setUploadingAvatar(true)
       const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels)
       
-      // 1. Convert to ArrayBuffer to avoid string regex matching DOMExceptions
       const arrayBuffer = await croppedBlob.arrayBuffer()
       const fileName = `avatars/${Date.now()}-avatar.jpg`
 
-      // 2. Upload cleanly to Supabase 'images' bucket
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('images')
         .upload(fileName, arrayBuffer, {
@@ -153,7 +151,6 @@ export default function SettingsPage() {
       
       if (uploadError) throw new Error(uploadError.message || 'Supabase storage rejected avatar')
 
-      // 3. Return the stored public String URL
       const { data: { publicUrl } } = supabase.storage
         .from('images')
         .getPublicUrl(fileName)
@@ -179,7 +176,6 @@ export default function SettingsPage() {
     try {
       await updateUser({
         name: formData.name,
-        // Optional: you can omit username if you don't want to allow changing it, or handle uniqueness checks
         username: formData.username,
         bio: formData.bio,
         location: formData.location,
@@ -199,289 +195,307 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <div className="spinner" style={{ width: 40, height: 40, borderWidth: 3 }} />
+        <div className="spinner" style={{ width: 40, height: 40, borderWidth: 3, borderColor: 'var(--color-accent)' }} />
       </div>
     )
   }
 
   return (
-    <div className="fade-in" style={{ padding: '2rem 1.5rem', maxWidth: 640, margin: '0 auto' }}>
-      <button 
-        onClick={() => navigate(-1)} 
-        className="btn btn-ghost" 
-        style={{ marginBottom: '1.5rem', marginLeft: '-0.5rem' }}
-      >
-        <ArrowLeft size={18} /> Back
-      </button>
+    <div className="fade-in container" style={{ padding: '2rem 2rem 4rem', maxWidth: 1280 }}>
+      
+      {/* Header */}
+      <div style={{ marginBottom: '3rem' }}>
+        <button 
+          onClick={() => navigate(-1)} 
+          className="btn btn-ghost" 
+          style={{ marginBottom: '1rem', marginLeft: '-0.5rem', display: 'inline-flex' }}
+        >
+          <ArrowLeft size={18} /> Back
+        </button>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-1px' }}>
+          Settings
+        </h1>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: '1.05rem' }}>
+          Manage your account settings and preferences.
+        </p>
+      </div>
 
-      <h1 style={{ fontFamily: 'Poppins, sans-serif', fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-        Edit Profile
-      </h1>
-      <p style={{ color: '#94A3B8', marginBottom: '2rem' }}>
-        Update your personal details and public portfolio information.
-      </p>
-
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr 320px', gap: '3rem' }}>
         
-        {/* Crop Modal */}
-        {showCropModal && (
-          <div style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            background: 'rgba(2, 6, 23, 0.9)', backdropFilter: 'blur(8px)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            padding: '1rem'
-          }}>
-            <div style={{ width: '100%', maxWidth: 500, background: '#0F172A', borderRadius: 16, overflow: 'hidden', border: '1px solid #1E293B', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
-              <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #1E293B', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ color: '#F8FAFC', fontWeight: 600, margin: 0 }}>Crop Profile Picture</h3>
-                <button 
-                  type="button"
-                  onClick={() => { setShowCropModal(false); setImageSrc(null) }} 
-                  style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', display: 'flex' }}
-                >
-                  <X size={20} />
-                </button>
+        {/* Left Nav */}
+        <div>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <button className={`settings-tab ${activeTab === 'general' ? 'active' : ''}`} onClick={() => setActiveTab('general')}>
+              <User size={18} /> General
+            </button>
+            <button className={`settings-tab ${activeTab === 'security' ? 'active' : ''}`} onClick={() => setActiveTab('security')}>
+              <Shield size={18} /> Security
+            </button>
+            <button className={`settings-tab ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => setActiveTab('notifications')}>
+              <Bell size={18} /> Notifications
+            </button>
+            <button className={`settings-tab ${activeTab === 'api' ? 'active' : ''}`} onClick={() => setActiveTab('api')}>
+              <Key size={18} /> API Keys
+            </button>
+          </nav>
+        </div>
+
+        {/* Middle Form */}
+        <div className="glass-card" style={{ padding: '2.5rem' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>General Settings</h2>
+          
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            
+            {/* Avatar Section */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'var(--color-bg-primary)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--color-border)' }}>
+              <div 
+                style={{ position: 'relative', cursor: 'pointer' }}
+                onClick={() => !uploadingAvatar && fileInputRef.current?.click()}
+              >
+                {formData.avatar_url ? (
+                  <img 
+                    src={formData.avatar_url} 
+                    alt="Avatar preview" 
+                    style={{ width: 88, height: 88, borderRadius: '24px', objectFit: 'cover', border: '4px solid #FFFFFF', boxShadow: 'var(--shadow-soft)', opacity: uploadingAvatar ? 0.5 : 1 }} 
+                  />
+                ) : (
+                  <div 
+                    style={{ width: 88, height: 88, borderRadius: '24px', background: 'var(--color-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 600, color: 'var(--color-accent)', border: '4px solid #FFFFFF', boxShadow: 'var(--shadow-soft)', opacity: uploadingAvatar ? 0.5 : 1 }}
+                  >
+                    {formData.username?.[0]?.toUpperCase() || '?'}
+                  </div>
+                )}
+                
+                <div style={{
+                  position: 'absolute',
+                  bottom: -4,
+                  right: -4,
+                  background: 'var(--color-text-primary)',
+                  borderRadius: '50%',
+                  padding: '0.4rem',
+                  border: '2px solid #FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Camera size={14} color="#FFFFFF" />
+                </div>
               </div>
               
-              <div style={{ position: 'relative', width: '100%', height: 350, background: '#020617' }}>
-                <Cropper
-                  image={imageSrc}
-                  crop={crop}
-                  zoom={zoom}
-                  aspect={1}
-                  cropShape="round"
-                  showGrid={false}
-                  onCropChange={setCrop}
-                  onCropComplete={onCropComplete}
-                  onZoomChange={setZoom}
+              <div style={{ flex: 1 }}>
+                <p style={{ fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '0.25rem' }}>
+                  Profile Picture
+                </p>
+                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+                  Recommended size: 256x256px. Max size 5MB.
+                </p>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleAvatarChange}
+                  accept="image/*"
+                  style={{ display: 'none' }}
                 />
               </div>
-              
-              <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <span style={{ color: '#94A3B8', fontSize: '0.875rem', minWidth: 40 }}>Zoom</span>
-                  <input
-                    type="range"
-                    value={zoom}
-                    min={1}
-                    max={3}
-                    step={0.05}
-                    onChange={(e) => setZoom(e.target.value)}
-                    style={{ flex: 1, accentColor: '#6366F1' }}
-                  />
-                </div>
-                
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                  <button
-                    type="button"
-                    onClick={() => { setShowCropModal(false); setImageSrc(null) }}
-                    className="btn btn-ghost"
-                    style={{ flex: 1 }}
-                    disabled={uploadingAvatar}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleUploadCropped}
-                    className="btn btn-primary"
-                    style={{ flex: 1 }}
-                    disabled={uploadingAvatar}
-                  >
-                    {uploadingAvatar ? (
-                      <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> Uploading...</>
-                    ) : (
-                      <><Check size={16} /> Crop & Upload</>
-                    )}
-                  </button>
-                </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label className="input-label" htmlFor="name">Display Name</label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Your full name"
+                  className="input-field"
+                  required
+                />
+              </div>
+
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label className="input-label" htmlFor="username">Username</label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  value={formData.username}
+                  onChange={handleChange}
+                  placeholder="username"
+                  className="input-field"
+                  required
+                  pattern="[a-zA-Z0-9_]+"
+                  title="Only letters, numbers, and underscores allowed"
+                />
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Avatar Picker Overlay */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '0.5rem' }}>
-          <div 
-            style={{ position: 'relative', cursor: 'pointer' }}
-            onClick={() => !uploadingAvatar && fileInputRef.current?.click()}
-          >
-            {formData.avatar_url ? (
-              <img 
-                src={formData.avatar_url} 
-                alt="Avatar preview" 
-                style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '3px solid #1E293B', opacity: uploadingAvatar ? 0.5 : 1 }} 
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label className="input-label" htmlFor="bio">Bio</label>
+              <textarea
+                id="bio"
+                name="bio"
+                value={formData.bio}
+                onChange={handleChange}
+                placeholder="Tell us about yourself..."
+                className="input-field"
+                rows={4}
+                style={{ resize: 'vertical' }}
+                maxLength={300}
               />
-            ) : (
-              <div 
-                style={{ width: 80, height: 80, borderRadius: '50%', background: '#1E293B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 600, color: '#64748B', opacity: uploadingAvatar ? 0.5 : 1 }}
-              >
-                {formData.username?.[0]?.toUpperCase() || '?'}
-              </div>
-            )}
-            
-            {/* Overlay Icon */}
-            <div style={{
-              position: 'absolute',
-              bottom: 0,
-              right: 0,
-              background: '#6366F1',
-              borderRadius: '50%',
-              padding: '0.35rem',
-              border: '2px solid #020617',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Camera size={14} color="#FFFFFF" />
             </div>
 
-            {uploadingAvatar && (
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)'
-              }}>
-                <div className="spinner" style={{ width: 24, height: 24, borderWidth: 3 }} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label className="input-label" htmlFor="location">Location</label>
+                <input
+                  id="location"
+                  name="location"
+                  type="text"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="City, Country"
+                  className="input-field"
+                />
               </div>
-            )}
+
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label className="input-label" htmlFor="portfolio_link">Portfolio Link</label>
+                <input
+                  id="portfolio_link"
+                  name="portfolio_link"
+                  type="url"
+                  value={formData.portfolio_link}
+                  onChange={handleChange}
+                  placeholder="https://..."
+                  className="input-field"
+                />
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button 
+                type="submit" 
+                className="btn btn-primary" 
+                disabled={saving}
+                style={{ padding: '0.75rem 2rem' }}
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Right Sidebar */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          <div className="glass-card" style={{ padding: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <HardDrive size={18} color="var(--color-accent)" /> Current Storage
+            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.75rem' }}>
+              <span className="numbers" style={{ fontSize: '1.5rem', fontWeight: 700 }}>2.45 GB</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>of 10 GB</span>
+            </div>
+            <div style={{ height: '8px', background: 'var(--color-border)', borderRadius: '4px', overflow: 'hidden', marginBottom: '1.25rem' }}>
+              <div style={{ width: '24.5%', height: '100%', background: 'var(--color-accent)' }}></div>
+            </div>
+            <button className="btn btn-secondary" style={{ width: '100%' }}>
+              Manage Storage
+            </button>
+          </div>
+
+          <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(188, 71, 73, 0.2)', background: 'rgba(188, 71, 73, 0.02)' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-error)' }}>
+              <AlertTriangle size={18} /> Danger Zone
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginBottom: '1.25rem' }}>
+              Once you delete your account, there is no going back. Please be certain.
+            </p>
+            <button className="btn btn-danger" style={{ width: '100%' }}>
+              Delete Account
+            </button>
           </div>
           
-          <div style={{ flex: 1 }}>
-            <p style={{ fontWeight: 600, color: '#FFFFFF', marginBottom: '0.25rem' }}>
-              Profile Picture <span style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 400 }}>(optional)</span>
-            </p>
-            <p style={{ color: '#94A3B8', fontSize: '0.8rem' }}>
-              Click the avatar to upload a new one. <br/>
-              Recommended size: 256x256px. Max size 5MB.
-            </p>
-            {formData.avatar_url && (
-              <button
-                type="button"
-                onClick={() => setFormData(prev => ({ ...prev, avatar_url: '' }))}
-                style={{ background: 'none', border: 'none', color: '#EF4444', fontSize: '0.8rem', marginTop: '0.5rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
-              >
-                Remove Avatar
+        </div>
+      </div>
+
+      {/* Crop Modal (Hidden logic preserved) */}
+      {showCropModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(247, 244, 239, 0.85)', backdropFilter: 'blur(12px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div className="modal" style={{ maxWidth: 500 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontWeight: 600, fontSize: '1.25rem' }}>Crop Profile Picture</h3>
+              <button onClick={() => { setShowCropModal(false); setImageSrc(null) }} className="icon-btn">
+                <X size={20} />
               </button>
-            )}
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleAvatarChange}
-              accept="image/*"
-              style={{ display: 'none' }}
-            />
+            </div>
+            
+            <div style={{ position: 'relative', width: '100%', height: 350, background: 'var(--color-bg-secondary)', borderRadius: '16px', overflow: 'hidden', marginBottom: '1.5rem' }}>
+              <Cropper
+                image={imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+              <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>Zoom</span>
+              <input type="range" value={zoom} min={1} max={3} step={0.05} onChange={(e) => setZoom(e.target.value)} style={{ flex: 1, accentColor: 'var(--color-accent)' }} />
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button type="button" onClick={() => { setShowCropModal(false); setImageSrc(null) }} className="btn btn-secondary" style={{ flex: 1 }}>
+                Cancel
+              </button>
+              <button type="button" onClick={handleUploadCropped} className="btn btn-primary" style={{ flex: 1 }}>
+                {uploadingAvatar ? 'Uploading...' : 'Crop & Upload'}
+              </button>
+            </div>
           </div>
         </div>
+      )}
 
-        <div className="input-group">
-          <label className="input-label" htmlFor="name">
-            <User size={14} style={{ display: 'inline', marginRight: '0.25rem' }} />
-            Display Name
-          </label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Your full name"
-            className="input-field"
-            required
-          />
-        </div>
-
-        <div className="input-group">
-          <label className="input-label" htmlFor="username">
-            <User size={14} style={{ display: 'inline', marginRight: '0.25rem' }} />
-            Username
-          </label>
-          <input
-            id="username"
-            name="username"
-            type="text"
-            value={formData.username}
-            onChange={handleChange}
-            placeholder="username"
-            className="input-field"
-            required
-            pattern="[a-zA-Z0-9_]+"
-            title="Only letters, numbers, and underscores allowed"
-          />
-        </div>
-
-        <div className="input-group">
-          <label className="input-label" htmlFor="bio">
-            Bio
-          </label>
-          <textarea
-            id="bio"
-            name="bio"
-            value={formData.bio}
-            onChange={handleChange}
-            placeholder="Tell us about yourself and your photography style..."
-            className="input-field"
-            rows={4}
-            style={{ resize: 'vertical' }}
-            maxLength={300}
-          />
-        </div>
-
-        <div className="input-group">
-          <label className="input-label" htmlFor="location">
-            <MapPin size={14} style={{ display: 'inline', marginRight: '0.25rem' }} />
-            Location
-          </label>
-          <input
-            id="location"
-            name="location"
-            type="text"
-            value={formData.location}
-            onChange={handleChange}
-            placeholder="City, Country"
-            className="input-field"
-          />
-        </div>
-
-        <div className="input-group">
-          <label className="input-label" htmlFor="portfolio_link">
-            <Globe size={14} style={{ display: 'inline', marginRight: '0.25rem' }} />
-            Portfolio or Website Link
-          </label>
-          <input
-            id="portfolio_link"
-            name="portfolio_link"
-            type="url"
-            value={formData.portfolio_link}
-            onChange={handleChange}
-            placeholder="https://myportfolio.com"
-            className="input-field"
-          />
-        </div>
-
-        <div style={{ marginTop: '1rem', borderTop: '1px solid #1E293B', paddingTop: '1.5rem' }}>
-          <button 
-            type="submit" 
-            className="btn btn-primary" 
-            disabled={saving}
-            style={{ width: '100%' }}
-          >
-            {saving ? (
-              <>
-                <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-                Saving Changes...
-              </>
-            ) : (
-              <>
-                <Save size={18} />
-                Save Profile
-              </>
-            )}
-          </button>
-        </div>
-
-      </form>
+      <style>{`
+        .settings-tab {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.875rem 1.25rem;
+          border-radius: 12px;
+          border: none;
+          background: transparent;
+          color: var(--color-text-secondary);
+          font-size: 0.95rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-align: left;
+        }
+        .settings-tab:hover {
+          background: rgba(107, 112, 92, 0.05);
+          color: var(--color-text-primary);
+        }
+        .settings-tab.active {
+          background: var(--color-bg-card);
+          color: var(--color-accent);
+          font-weight: 600;
+          box-shadow: var(--shadow-soft);
+          border: 1px solid var(--color-border);
+        }
+      `}</style>
     </div>
   )
 }

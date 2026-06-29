@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Heart, Download, ArrowLeft, User, Calendar, Eye, Share2, Tag, Sparkles, Trash2, Edit3, Image as ImageIcon } from 'lucide-react'
+import { Heart, Download, ArrowLeft, User, Calendar, Eye, Share2, Tag, Sparkles, Trash2, Edit3, Image as ImageIcon, Hash } from 'lucide-react'
 import photoService from '../services/photoService'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
