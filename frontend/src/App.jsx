@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import UploadPage from './pages/UploadPage'
+import WorkspacePage from './pages/WorkspacePage'
 import PhotoViewPage from './pages/PhotoViewPage'
 import ProfilePage from './pages/ProfilePage'
 import SearchPage from './pages/SearchPage'
@@ -27,6 +28,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <UploadPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace"
+            element={
+              <ProtectedRoute>
+                <WorkspacePage />
               </ProtectedRoute>
             }
           />

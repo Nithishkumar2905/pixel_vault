@@ -3,15 +3,20 @@ import { supabase } from '../lib/supabase'
 
 const photoService = {
   getAll: async (params = {}) => {
-    const { page = 1, limit = 20, sort = '-created_at', userId, q } = params
+    const { page = 1, limit = 20, sort = '-created_at', userId, q, includeDrafts = false } = params
     const orderCol = sort.includes('created_at') ? 'created_at' : 'created_at'
     const ascending = !sort.startsWith('-')
 
     let query = supabase.from('photos').select('*, users!inner(name, username, avatar_url, email, portfolio_link)', { count: 'exact' })
+    
+    if (!includeDrafts) {
+      query = query.eq('publish_status', 'published')
+    }
+    
     if (userId) query = query.eq('user_id', userId)
     if (q) {
       const safeTerm = q.trim().replace(/[,{}]/g, '') // remove characters that break PostgREST array syntax
-      query = query.or(`title.ilike.%${safeTerm}%,description.ilike.%${safeTerm}%,tags.cs.{${safeTerm.toLowerCase()}}`)
+      query = query.or(`title.ilike.%${safeTerm}%,description.ilike.%${safeTerm}%,tags.cs.{${safeTerm.toLowerCase()}},keywords.cs.{${safeTerm.toLowerCase()}},hashtags.cs.{${safeTerm.toLowerCase()}}`)
     }
 
     const from = (page - 1) * limit
@@ -190,7 +195,7 @@ const photoService = {
   },
 
   getUserPhotos: async (userId) => {
-    return await photoService.getAll({ userId })
+    return await photoService.getAll({ userId, includeDrafts: true })
   },
 }
 

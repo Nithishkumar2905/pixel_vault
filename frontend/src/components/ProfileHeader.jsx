@@ -130,9 +130,29 @@ export default function ProfileHeader({ profile, stats, isOwn: isOwnProp }) {
           <div className="stat-card">
             <div className="stat-value">{stats?.photoCount ?? 0}</div>
             <div className="stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
-              <Image size={12} /> Photos
+              <Image size={12} /> Total Uploaded
             </div>
           </div>
+          {isOwn && (
+            <>
+              <div className="stat-card">
+                <div className="stat-value">{stats?.private ?? 0}</div>
+                <div className="stat-label">Private Images</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">{stats?.published ?? 0}</div>
+                <div className="stat-label">Published</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">{stats?.tagsGenerated ?? 0}</div>
+                <div className="stat-label">AI Tags</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">{stats?.albums ?? 0}</div>
+                <div className="stat-label">Albums</div>
+              </div>
+            </>
+          )}
           <div className="stat-card">
             <div className="stat-value">{stats?.totalLikes ?? 0}</div>
             <div className="stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>

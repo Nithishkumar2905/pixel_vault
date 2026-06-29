@@ -12,6 +12,8 @@ export default function PhotoViewPage() {
   const navigate = useNavigate()
   const [photo, setPhoto] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState({ title: '', description: '' })
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
   const [liking, setLiking] = useState(false)
@@ -25,6 +27,7 @@ export default function PhotoViewPage() {
         const data = await photoService.getById(id)
         const p = data.photo || data
         setPhoto(p)
+        setEditForm({ title: p.title || '', description: p.description || '' })
         setLiked(p.isLiked || false)
         setLikeCount(p.likeCount || 0)
       } catch {
@@ -102,6 +105,17 @@ export default function PhotoViewPage() {
     }
   }
 
+  const handleSaveEdit = async () => {
+    try {
+      const res = await photoService.update(id, editForm)
+      setPhoto({ ...photo, ...editForm })
+      setEditing(false)
+      toast.success('Updated successfully')
+    } catch (err) {
+      toast.error('Failed to update')
+    }
+  }
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -154,51 +168,81 @@ export default function PhotoViewPage() {
 
           {/* ===== DETAILS PANEL ===== */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'sticky', top: '5rem' }}>
-            {/* Title & Actions */}
-            <div>
-              <h1
-                style={{
-                  fontFamily: 'Poppins, sans-serif',
-                  fontSize: '1.5rem',
-                  fontWeight: 700,
-                  color: '#FFFFFF',
-                  marginBottom: '0.75rem',
-                  lineHeight: 1.25,
-                }}
-              >
-                {photo.title || 'Untitled'}
-              </h1>
-
-              {/* Action buttons */}
-              <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap' }}>
-                <button
-                  id="like-photo-btn"
-                  onClick={handleLike}
-                  className={`btn ${liked ? 'btn-danger' : 'btn-secondary'}`}
-                  disabled={liking}
-                >
-                  <Heart size={16} fill={liked ? 'currentColor' : 'none'} />
-                  {likeCount > 0 ? likeCount : ''} {liked ? 'Liked' : 'Like'}
-                </button>
-                <button id="download-photo-btn" onClick={handleDownload} className="btn btn-highlight">
-                  <Download size={16} /> Download
-                </button>
-                <button id="share-photo-btn" onClick={handleShare} className="btn btn-ghost btn-sm">
-                  <Share2 size={15} />
-                </button>
-
-                {user && photo.user_id === user.id && (
-                  <button 
-                    onClick={handleDelete} 
-                    className="btn btn-danger btn-sm"
-                    disabled={deleting}
-                    style={{ marginLeft: 'auto' }}
+              {/* Title & Actions */}
+              {editing ? (
+                <div style={{ marginBottom: '1rem' }}>
+                  <input 
+                    type="text" 
+                    value={editForm.title} 
+                    onChange={e => setEditForm({...editForm, title: e.target.value})}
+                    style={{ width: '100%', padding: '0.5rem', marginBottom: '0.5rem', background: '#1f2937', color: '#fff', border: '1px solid #374151', borderRadius: '8px' }}
+                  />
+                  <textarea 
+                    value={editForm.description} 
+                    onChange={e => setEditForm({...editForm, description: e.target.value})}
+                    style={{ width: '100%', padding: '0.5rem', marginBottom: '0.5rem', background: '#1f2937', color: '#fff', border: '1px solid #374151', borderRadius: '8px', minHeight: '80px' }}
+                  />
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={handleSaveEdit} className="btn btn-primary btn-sm">Save</button>
+                    <button onClick={() => setEditing(false)} className="btn btn-ghost btn-sm">Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h1
+                    style={{
+                      fontFamily: 'Poppins, sans-serif',
+                      fontSize: '1.5rem',
+                      fontWeight: 700,
+                      color: '#FFFFFF',
+                      marginBottom: '0.25rem',
+                      lineHeight: 1.25,
+                    }}
                   >
-                    <Trash2 size={15} /> Delete
-                  </button>
-                )}
-              </div>
-            </div>
+                    {photo.title || 'Untitled'}
+                  </h1>
+                  
+                  {photo.album && (
+                    <div style={{ display: 'inline-block', background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', marginBottom: '0.75rem' }}>
+                      Album: {photo.album}
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap' }}>
+                    <button
+                      id="like-photo-btn"
+                      onClick={handleLike}
+                      className={`btn ${liked ? 'btn-danger' : 'btn-secondary'}`}
+                      disabled={liking}
+                    >
+                      <Heart size={16} fill={liked ? 'currentColor' : 'none'} />
+                      {likeCount > 0 ? likeCount : ''} {liked ? 'Liked' : 'Like'}
+                    </button>
+                    <button id="download-photo-btn" onClick={handleDownload} className="btn btn-highlight">
+                      <Download size={16} /> Download
+                    </button>
+                    <button id="share-photo-btn" onClick={handleShare} className="btn btn-ghost btn-sm">
+                      <Share2 size={15} />
+                    </button>
+
+                    {user && photo.user_id === user.id && (
+                      <>
+                        <button onClick={() => setEditing(true)} className="btn btn-secondary btn-sm" style={{ marginLeft: 'auto' }}>
+                          Edit
+                        </button>
+                        <button 
+                          onClick={handleDelete} 
+                          className="btn btn-danger btn-sm"
+                          disabled={deleting}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
 
             {/* Stats */}
             <div
@@ -251,6 +295,28 @@ export default function PhotoViewPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginTop: '0.5rem' }}>
                     <Sparkles size={11} style={{ color: '#F59E0B' }} />
                     <span style={{ color: '#64748B', fontSize: '0.7rem' }}>Tags generated by AI</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Keywords & Hashtags */}
+            {(photo.keywords?.length > 0 || photo.hashtags?.length > 0) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {photo.keywords?.length > 0 && (
+                  <div>
+                    <span style={{ color: '#94A3B8', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>SEO Keywords</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                      {photo.keywords.map(k => <span key={k} style={{ fontSize: '0.7rem', color: '#9ca3af' }}>{k},</span>)}
+                    </div>
+                  </div>
+                )}
+                {photo.hashtags?.length > 0 && (
+                  <div>
+                    <span style={{ color: '#94A3B8', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Hashtags</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                      {photo.hashtags.map(h => <span key={h} style={{ fontSize: '0.75rem', color: '#6366f1' }}>{h}</span>)}
+                    </div>
                   </div>
                 )}
               </div>

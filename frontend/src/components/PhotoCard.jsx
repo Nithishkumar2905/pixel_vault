@@ -21,9 +21,9 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
   const handleDelete = async (e) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     if (!window.confirm('Are you sure you want to delete this photo?')) return
-    
+
     setDeleting(true)
     try {
       await photoService.delete(photo.id)
@@ -66,7 +66,7 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
       const response = await fetch(imgSrc)
       const blob = await response.blob()
       const objectUrl = URL.createObjectURL(blob)
-      
+
       const link = document.createElement('a')
       link.href = objectUrl
       link.download = photo.title ? `${photo.title}.jpg` : 'photovault-photo.jpg'
@@ -74,7 +74,7 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(objectUrl)
-      
+
       if (photo.id) await photoService.download(photo.id)
       toast.success('Download started!')
     } catch (error) {
@@ -181,8 +181,9 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
 
       {/* Tags badge */}
       {photo.tags?.length > 0 && (
-        <div className="photo-card-badge">
-          #{photo.tags[0]}
+        <div className="photo-card-badge" style={{ display: 'flex', gap: '0.25rem' }}>
+          <span>#{photo.tags[0]}</span>
+          {photo.tags.length > 1 && <span className="hide-on-mobile">#{photo.tags[1]}</span>}
         </div>
       )}
     </div>

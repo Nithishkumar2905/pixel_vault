@@ -11,6 +11,7 @@ export default function ProfilePage() {
   const { user } = useAuth()
   const [profile, setProfile] = useState(null)
   const [photos, setPhotos] = useState([])
+  const [allPhotos, setAllPhotos] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -30,16 +31,36 @@ export default function ProfilePage() {
         setProfile(p)
         setPhotos(ph)
 
-        // Sum the total likes from the users photos
+        // For DAM Analytics
+        const totalUploaded = ph.length
+        const publishedImages = ph.filter(p => p.publish_status === 'published').length
+        const privateImages = totalUploaded - publishedImages
+        const totalTags = ph.reduce((sum, p) => sum + (p.tags?.length || 0) + (p.keywords?.length || 0), 0)
         const totalLikes = ph.reduce((sum, photo) => sum + (photo.likes_count || 0), 0)
         const totalDownloads = ph.reduce((sum, photo) => sum + (photo.download_count || 0), 0)
+        const uniqueAlbums = new Set(ph.filter(p => p.album).map(p => p.album)).size
 
-        setStats({ photoCount: ph.length, totalLikes, totalDownloads })
+        setStats({ 
+          photoCount: totalUploaded, 
+          published: publishedImages,
+          private: privateImages,
+          tagsGenerated: totalTags,
+          totalLikes, 
+          totalDownloads,
+          albums: uniqueAlbums
+        })
+        
+        // If viewing someone else's profile, only show published photos
+        if (targetId !== user?.id) {
+          setPhotos(ph.filter(p => p.publish_status === 'published'))
+        } else {
+          setPhotos(ph)
+        }
       } catch (err) {
         console.error('Error fetching profile:', err)
         setProfile(null)
         setPhotos([])
-        setStats({ photoCount: 0, totalLikes: 0, totalDownloads: 0 })
+        setStats({ photoCount: 0, published: 0, private: 0, tagsGenerated: 0, totalLikes: 0, totalDownloads: 0, albums: 0 })
       } finally {
         setLoading(false)
       }

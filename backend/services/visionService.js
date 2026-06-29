@@ -82,15 +82,30 @@ export const analyzeImage = async (imageUrl) => {
     // Smart Fallback without hardcoding default captions
     const urlParts = imageUrl.toLowerCase().split('/')
     const filenameWithExt = urlParts[urlParts.length - 1]
-    const filename = filenameWithExt.split('.')[0]
+    const filename = filenameWithExt.split(/[?.]/)[0] // Handle query params and extension
 
-    // Extract dynamic tags from the filename (e.g., 'summer_beach_trip' -> ['summer', 'beach', 'trip'])
-    const nameTags = filename.split(/[-_]/).filter(word => word.length > 2)
+    // Extract dynamic tags from the filename, filtering out purely numeric strings (like timestamps) 
+    // and suspicious alphanumeric IDs (like hex strings)
+    const nameTags = filename.split(/[-_]/)
+      .filter(word => {
+        const isTooShort = word.length <= 2;
+        const isPureNumber = /^\d+$/.test(word);
+        const isRandomId = word.length > 10 && /\d/.test(word) && /[a-z]/.test(word);
+        return !isTooShort && !isPureNumber && !isRandomId;
+      })
+    
     let contextualTags = [...nameTags].slice(0, 6)
 
+    // If no tags extracted from filename, use sensible defaults
+    if (contextualTags.length === 0) {
+      contextualTags = ['photography', 'pixelvault', 'visuals']
+    }
+
     let fallbackDesc = ''
-    if (contextualTags.length > 0) {
-      fallbackDesc = `Image featuring ${contextualTags.join(', ')}.`
+    if (nameTags.length > 0) {
+      fallbackDesc = `Image featuring ${nameTags.join(', ')}.`
+    } else {
+      fallbackDesc = 'A beautiful photograph captured on PixelVault.'
     }
 
     return {

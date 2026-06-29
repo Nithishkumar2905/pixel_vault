@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Camera, Upload, Search, User, LogIn, LogOut, Home, Menu, X } from 'lucide-react'
+import { Camera, Upload, Search, User, LogIn, LogOut, Home, Menu, X, LayoutDashboard } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useState } from 'react'
 
@@ -17,7 +17,10 @@ export default function Navbar() {
   const links = [
     { to: '/', icon: <Home size={16} />, label: 'Explore' },
     { to: '/search', icon: <Search size={16} />, label: 'Search' },
-    ...(user ? [{ to: '/upload', icon: <Upload size={16} />, label: 'Upload' }] : []),
+    ...(user ? [
+      { to: '/workspace', icon: <LayoutDashboard size={16} />, label: 'Workspace' },
+      { to: '/upload', icon: <Upload size={16} />, label: 'Upload' }
+    ] : []),
   ]
 
   return (

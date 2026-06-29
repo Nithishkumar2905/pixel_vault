@@ -1,243 +1,148 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, Image as ImageIcon, X, Sparkles, Tag, FileText } from 'lucide-react'
+import { Upload, X, CheckCircle, AlertCircle, FileImage } from 'lucide-react'
 import photoService from '../services/photoService'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 
 export default function UploadForm() {
   const navigate = useNavigate()
-  const [file, setFile] = useState(null)
-  const [preview, setPreview] = useState(null)
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [tags, setTags] = useState('')
+  const [files, setFiles] = useState([])
   const [uploading, setUploading] = useState(false)
+  const [overallProgress, setOverallProgress] = useState(0)
 
   const onDrop = useCallback((accepted) => {
-    const f = accepted[0]
-    if (!f) return
-    if (f.size > 20 * 1024 * 1024) {
-      toast.error('File must be under 20MB')
+    if (accepted.length > 500) {
+      toast.error('Maximum 500 images allowed per batch')
       return
     }
-    setFile(f)
-    const reader = new FileReader()
-    reader.onload = (e) => setPreview(e.target.result)
-    reader.readAsDataURL(f)
+    
+    const newFiles = accepted.map(f => ({
+      file: f,
+      id: Math.random().toString(36).substring(7),
+      preview: URL.createObjectURL(f),
+      status: 'pending', // pending, uploading, success, error
+      progress: 0,
+      error: null
+    }))
+    
+    setFiles(prev => [...prev, ...newFiles])
   }, [])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'image/*': ['.jpg', '.jpeg', '.png', '.webp', '.gif'] },
-    multiple: false,
+    multiple: true,
   })
 
-  const clearFile = () => {
-    setFile(null)
-    setPreview(null)
+  const removeFile = (id) => {
+    setFiles(prev => prev.filter(f => f.id !== id))
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!file) { toast.error('Please select an image'); return }
+  const handleBulkUpload = async () => {
+    if (files.length === 0) return
     setUploading(true)
-    try {
-      const formData = new FormData()
-      formData.append('image', file)
-      formData.append('title', title || file.name.replace(/\.[^/.]+$/, ''))
-      formData.append('description', description)
-      formData.append('tags', tags)
-      const res = await photoService.upload(formData)
-      toast.success('Photo uploaded successfully! 🎉')
-      navigate(`/photos/${res.photo?.id || ''}`)
-    } catch (err) {
-      toast.error(err.message || 'Upload failed')
-    } finally {
-      setUploading(false)
+    let completed = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const fileObj = files[i]
+      if (fileObj.status === 'success') {
+        completed++;
+        continue;
+      }
+
+      setFiles(prev => prev.map(f => f.id === fileObj.id ? { ...f, status: 'uploading', progress: 50 } : f))
+
+      try {
+        const formData = new FormData()
+        formData.append('image', fileObj.file)
+        formData.append('title', fileObj.file.name.replace(/\.[^/.]+$/, ''))
+        
+        await photoService.upload(formData)
+        
+        setFiles(prev => prev.map(f => f.id === fileObj.id ? { ...f, status: 'success', progress: 100 } : f))
+        completed++;
+      } catch (err) {
+        setFiles(prev => prev.map(f => f.id === fileObj.id ? { ...f, status: 'error', error: err.message } : f))
+      }
+      
+      setOverallProgress(Math.round((completed / files.length) * 100))
+    }
+
+    setUploading(false)
+    if (completed === files.length) {
+      toast.success('All files uploaded successfully!')
+      setTimeout(() => navigate('/workspace'), 1500)
+    } else {
+      toast.error(`Uploaded ${completed} of ${files.length} files.`)
     }
   }
 
+  const handleCancel = () => {
+    // Basic cancel: just clear pending/error files if not currently uploading
+    if (uploading) {
+      toast.error('Upload in progress. Reload page to force cancel.')
+      return
+    }
+    setFiles([])
+    setOverallProgress(0)
+  }
+
   return (
-    <form
-      id="upload-form"
-      onSubmit={handleSubmit}
-      style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
-    >
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Drop Zone */}
-      {!preview ? (
-        <div
-          {...getRootProps()}
-          className={`upload-zone ${isDragActive ? 'active' : ''}`}
-          id="upload-dropzone"
-        >
-          <input {...getInputProps()} id="upload-file-input" />
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-            <div
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: '50%',
-                background: 'rgba(99,102,241,0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#6366F1',
-              }}
-            >
-              <Upload size={32} />
-            </div>
-            <div>
-              <p style={{ color: '#E2E8F0', fontWeight: 600, fontSize: '1rem', marginBottom: '0.25rem' }}>
-                {isDragActive ? 'Drop your photo here!' : 'Drag & drop your photo'}
-              </p>
-              <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>
-                or <span style={{ color: '#6366F1', fontWeight: 600, cursor: 'pointer' }}>browse</span> to select
-              </p>
-              <p style={{ color: '#475569', fontSize: '0.75rem', marginTop: '0.5rem' }}>
-                JPG, PNG, WebP, GIF — max 20MB
-              </p>
+      <div
+        {...getRootProps()}
+        className={`upload-zone ${isDragActive ? 'active' : ''}`}
+        style={{ padding: '3rem', border: '2px dashed #4F46E5', borderRadius: '16px', textAlign: 'center', cursor: 'pointer', background: isDragActive ? 'rgba(79, 70, 229, 0.1)' : 'rgba(17, 24, 39, 0.5)' }}
+      >
+        <input {...getInputProps()} />
+        <Upload size={48} color="#6366F1" style={{ margin: '0 auto 1rem' }} />
+        <h3 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '0.5rem' }}>
+          {isDragActive ? 'Drop files here' : 'Drag & drop photos or folders'}
+        </h3>
+        <p style={{ color: '#9ca3af' }}>Supports multiple files (max 500 images per batch)</p>
+      </div>
+
+      {/* Progress & Actions */}
+      {files.length > 0 && (
+        <div style={{ background: '#1F2937', padding: '1.5rem', borderRadius: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h4 style={{ color: '#fff', margin: 0 }}>Upload Queue ({files.length} files)</h4>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button onClick={handleCancel} disabled={uploading} className="btn btn-secondary" style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: '#374151', color: '#fff', border: 'none' }}>
+                Clear All
+              </button>
+              <button onClick={handleBulkUpload} disabled={uploading} className="btn btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '8px', background: '#4F46E5', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {uploading ? 'Uploading...' : 'Start Upload'}
+              </button>
             </div>
           </div>
-        </div>
-      ) : (
-        <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', background: '#111827' }}>
-          <img
-            src={preview}
-            alt="Preview"
-            id="photo-preview"
-            style={{
-              width: '100%',
-              maxHeight: 450,
-              objectFit: 'contain',
-              display: 'block',
-              borderRadius: 16,
-            }}
-          />
-          <button
-            type="button"
-            onClick={clearFile}
-            className="btn btn-danger btn-sm"
-            id="remove-photo-btn"
-            style={{
-              position: 'absolute',
-              top: '0.75rem',
-              right: '0.75rem',
-              borderRadius: '50%',
-              padding: '0.4rem',
-            }}
-            aria-label="Remove photo"
-          >
-            <X size={16} />
-          </button>
-          <div
-            style={{
-              position: 'absolute',
-              bottom: '0.75rem',
-              left: '0.75rem',
-              background: 'rgba(2,6,23,0.8)',
-              backdropFilter: 'blur(8px)',
-              borderRadius: 8,
-              padding: '0.375rem 0.75rem',
-              fontSize: '0.75rem',
-              color: '#94A3B8',
-            }}
-          >
-            <ImageIcon size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
-            {file?.name} · {(file?.size / 1024 / 1024).toFixed(2)} MB
+          
+          {uploading && (
+            <div style={{ width: '100%', background: '#374151', borderRadius: '4px', height: '8px', marginBottom: '1rem', overflow: 'hidden' }}>
+              <div style={{ height: '100%', background: '#4F46E5', width: `${overallProgress}%`, transition: 'width 0.3s' }}></div>
+            </div>
+          )}
+
+          <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {files.map(f => (
+              <div key={f.id} style={{ display: 'flex', alignItems: 'center', background: '#111827', padding: '0.75rem', borderRadius: '8px', gap: '1rem' }}>
+                <img src={f.preview} alt="preview" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: '4px' }} />
+                <div style={{ flex: 1, overflow: 'hidden' }}>
+                  <div style={{ color: '#fff', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.file.name}</div>
+                  <div style={{ color: '#9ca3af', fontSize: '0.75rem' }}>{(f.file.size / 1024 / 1024).toFixed(2)} MB</div>
+                </div>
+                
+                {f.status === 'pending' && <button onClick={() => removeFile(f.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><X size={20} /></button>}
+                {f.status === 'uploading' && <span style={{ color: '#60a5fa', fontSize: '0.85rem' }}>Uploading {f.progress}%</span>}
+                {f.status === 'success' && <CheckCircle size={20} color="#10b981" />}
+                {f.status === 'error' && <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444' }}><AlertCircle size={20} /><span style={{ fontSize: '0.75rem', maxWidth: '100px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={f.error}>{f.error}</span></div>}
+              </div>
+            ))}
           </div>
         </div>
       )}
-
-      {/* Fields */}
-      <div className="input-group">
-        <label className="input-label" htmlFor="photo-title">
-          <FileText size={14} style={{ display: 'inline', marginRight: '0.25rem' }} />
-          Title <span style={{ color: '#475569', fontSize: '0.75rem' }}>(optional)</span>
-        </label>
-        <input
-          id="photo-title"
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Give your photo a title…"
-          className="input-field"
-          maxLength={120}
-        />
-      </div>
-
-      <div className="input-group">
-        <label className="input-label" htmlFor="photo-description">
-          <FileText size={14} style={{ display: 'inline', marginRight: '0.25rem' }} />
-          Description <span style={{ color: '#475569', fontSize: '0.75rem' }}>(optional)</span>
-        </label>
-        <textarea
-          id="photo-description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Describe your photo…"
-          className="input-field"
-          rows={3}
-          style={{ resize: 'vertical', minHeight: 80 }}
-          maxLength={500}
-        />
-      </div>
-
-      <div className="input-group">
-        <label className="input-label" htmlFor="photo-tags">
-          <Tag size={14} style={{ display: 'inline', marginRight: '0.25rem' }} />
-          Tags <span style={{ color: '#475569', fontSize: '0.75rem' }}>(comma-separated)</span>
-        </label>
-        <input
-          id="photo-tags"
-          type="text"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          placeholder="nature, landscape, sunset…"
-          className="input-field"
-        />
-      </div>
-
-      {/* AI note */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '0.75rem',
-          padding: '0.875rem 1rem',
-          background: 'rgba(245,158,11,0.06)',
-          border: '1px solid rgba(245,158,11,0.15)',
-          borderRadius: 12,
-        }}
-      >
-        <Sparkles size={18} style={{ color: '#F59E0B', flexShrink: 0, marginTop: 2 }} />
-        <div>
-          <p style={{ color: '#FCD34D', fontSize: '0.8rem', fontWeight: 600 }}>AI Auto-Tagging</p>
-          <p style={{ color: '#94A3B8', fontSize: '0.75rem', marginTop: '0.125rem' }}>
-            After upload, Google Cloud Vision AI will automatically generate tags, descriptions, and similar photo recommendations.
-          </p>
-        </div>
-      </div>
-
-      <button
-        type="submit"
-        id="upload-submit-btn"
-        className="btn btn-primary btn-lg"
-        disabled={uploading || !file}
-        style={{ alignSelf: 'flex-start', minWidth: 160 }}
-      >
-        {uploading ? (
-          <>
-            <div className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
-            Uploading…
-          </>
-        ) : (
-          <>
-            <Upload size={18} />
-            Upload Photo
-          </>
-        )}
-      </button>
-    </form>
+    </div>
   )
 }

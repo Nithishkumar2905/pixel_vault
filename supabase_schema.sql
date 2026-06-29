@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   location TEXT,
   portfolio_link TEXT,
   avatar_url TEXT,
+  role TEXT DEFAULT 'viewer' CHECK (role IN ('photographer', 'viewer')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -29,9 +30,15 @@ CREATE TABLE IF NOT EXISTS public.photos (
   title TEXT,
   description TEXT,
   tags TEXT[] DEFAULT '{}',
+  keywords TEXT[] DEFAULT '{}',
+  hashtags TEXT[] DEFAULT '{}',
+  album TEXT,
+  publish_status TEXT DEFAULT 'draft' CHECK (publish_status IN ('draft', 'published')),
+  cloudinary_public_id TEXT,
   likes_count INT DEFAULT 0,
   download_count INT DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- 3. Create LIKES Table (Junction Table)
@@ -64,9 +71,13 @@ CREATE POLICY "Users can update own profile" ON public.users
   FOR UPDATE USING (auth.uid() = id);
 
 -- Photos Table Policies:
--- Anyone can view photos
-CREATE POLICY "Photos are viewable by everyone" ON public.photos
-  FOR SELECT USING (true);
+-- Anyone can view PUBLISHED photos
+CREATE POLICY "Published photos are viewable by everyone" ON public.photos
+  FOR SELECT USING (publish_status = 'published');
+
+-- Owners can view ALL their own photos (draft and published)
+CREATE POLICY "Users can view their own photos" ON public.photos
+  FOR SELECT USING (auth.uid() = user_id);
   
 -- Authenticated users can insert their own photos
 CREATE POLICY "Users can insert their own photos" ON public.photos
@@ -120,7 +131,8 @@ BEGIN
     bio,
     location,
     portfolio_link,
-    avatar_url
+    avatar_url,
+    role
   )
   VALUES (
     new.id,
@@ -130,7 +142,8 @@ BEGIN
     new.raw_user_meta_data->>'bio',
     new.raw_user_meta_data->>'location',
     new.raw_user_meta_data->>'portfolio_link',
-    new.raw_user_meta_data->>'avatar_url'
+    new.raw_user_meta_data->>'avatar_url',
+    COALESCE(new.raw_user_meta_data->>'role', 'viewer')
   );
   RETURN new;
 END;
