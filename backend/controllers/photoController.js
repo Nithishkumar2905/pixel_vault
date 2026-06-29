@@ -1,5 +1,5 @@
 import { supabase, createScopedClient } from '../config/supabase.js'
-import { analyzeImageWithVision, generateMetadataWithGrok } from '../services/ai.service.js'
+import { analyzeImageWithVision, generateMetadataWithGroq } from '../services/ai.service.js'
 
 export const uploadPhoto = async (req, res, next) => {
   try {
@@ -19,9 +19,9 @@ export const uploadPhoto = async (req, res, next) => {
       });
     }
 
-    // Generate Grok Metadata based on tags
-    console.log('Generating AI metadata with Grok...');
-    const grokMetadata = await generateMetadataWithGrok(visionData.tags, imageUrl);
+    // Generate Groq Metadata based on tags
+    console.log('Generating AI metadata with Groq...');
+    const grokMetadata = await generateMetadataWithGroq(visionData.tags, imageUrl);
     
     // Process user tags: split, trim, lowercase, and remove duplicates/empty
     const userTags = tags 

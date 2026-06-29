@@ -5,8 +5,6 @@ import photoService from '../services/photoService'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 
-
-
 export default function PhotoCard({ photo, index = 0, onDelete }) {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -93,19 +91,12 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
       className="photo-card photo-grid-item"
       id={`photo-card-${photo.id || index}`}
       onClick={() => photo.id && navigate(`/photos/${photo.id}`)}
-      style={{ cursor: photo.id ? 'pointer' : 'default' }}
+      style={{ cursor: photo.id ? 'pointer' : 'default', opacity: deleting ? 0.5 : 1 }}
     >
       <img
         src={imgSrc}
         alt={photo.title || photo.altText || 'Photo'}
         loading="lazy"
-        style={{
-          width: '100%',
-          display: 'block',
-          objectFit: 'cover',
-          borderRadius: 16,
-          opacity: deleting ? 0.5 : 1
-        }}
         onError={(e) => {
           e.target.src = 'https://via.placeholder.com/600x400?text=Image+Not+Found'
         }}
@@ -114,18 +105,18 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
       {/* Overlay */}
       <div className="photo-card-overlay">
         {/* Photographer info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
           <div
             className="avatar-placeholder"
-            style={{ width: 28, height: 28, fontSize: '0.7rem', flexShrink: 0 }}
+            style={{ width: 32, height: 32, fontSize: '0.75rem', flexShrink: 0, border: 'none', background: 'rgba(255,255,255,0.2)' }}
           >
-            {photo.photographer?.username?.[0]?.toUpperCase() || <User size={12} />}
+            {photo.photographer?.username?.[0]?.toUpperCase() || <User size={14} color="#FFF" />}
           </div>
           <div>
-            <p style={{ color: '#FFFFFF', fontSize: '0.8rem', fontWeight: 600, lineHeight: 1.1 }}>
+            <p className="photo-card-overlay-text" style={{ fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.2, fontFamily: 'var(--font-heading)' }}>
               {photo.title || 'Untitled'}
             </p>
-            <p style={{ color: '#94A3B8', fontSize: '0.7rem' }}>
+            <p className="photo-card-overlay-text" style={{ fontSize: '0.75rem', opacity: 0.8, fontFamily: 'var(--font-sans)' }}>
               {photo.photographer?.username || 'Anonymous'}
             </p>
           </div>
@@ -136,12 +127,13 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
           <button
             id={`like-btn-${photo.id || index}`}
             onClick={handleLike}
-            className={`like-btn ${liked ? 'liked' : ''}`}
+            className={`btn btn-secondary btn-sm ${liked ? 'liked' : ''}`}
             disabled={liking}
+            style={{ padding: '0.4rem 0.6rem', color: liked ? 'var(--color-error)' : 'var(--color-text-primary)' }}
             aria-label={liked ? 'Unlike' : 'Like'}
           >
-            <Heart size={13} fill={liked ? 'currentColor' : 'none'} />
-            {likeCount > 0 && <span>{likeCount}</span>}
+            <Heart size={14} fill={liked ? 'currentColor' : 'none'} />
+            {likeCount > 0 && <span className="numbers">{likeCount}</span>}
           </button>
 
           {photo.id && (
@@ -149,31 +141,31 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
               to={`/photos/${photo.id}`}
               onClick={(e) => e.stopPropagation()}
               className="btn btn-secondary btn-sm"
-              style={{ gap: '0.3rem', fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}
+              style={{ gap: '0.3rem', padding: '0.4rem 0.6rem' }}
             >
-              <Eye size={12} /> <span className="hide-on-mobile">View</span>
+              <Eye size={14} />
             </Link>
           )}
 
           <button
             id={`download-btn-${photo.id || index}`}
             onClick={handleDownload}
-            className="btn btn-ghost btn-sm"
-            style={{ gap: '0.3rem', fontSize: '0.75rem', padding: '0.3rem 0.6rem', color: '#94A3B8' }}
+            className="btn btn-secondary btn-sm"
+            style={{ gap: '0.3rem', padding: '0.4rem 0.6rem' }}
             aria-label="Download"
           >
-            <Download size={12} />
+            <Download size={14} />
           </button>
 
           {isOwner && (
             <button
               onClick={handleDelete}
-              className="btn btn-ghost btn-sm"
-              style={{ gap: '0.3rem', fontSize: '0.75rem', padding: '0.3rem 0.6rem', color: '#F87171' }}
+              className="btn btn-secondary btn-sm"
+              style={{ gap: '0.3rem', padding: '0.4rem 0.6rem', color: 'var(--color-error)' }}
               disabled={deleting}
               aria-label="Delete"
             >
-              <Trash2 size={12} />
+              <Trash2 size={14} />
             </button>
           )}
         </div>
@@ -182,8 +174,8 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
       {/* Tags badge */}
       {photo.tags?.length > 0 && (
         <div className="photo-card-badge" style={{ display: 'flex', gap: '0.25rem' }}>
-          <span>#{photo.tags[0]}</span>
-          {photo.tags.length > 1 && <span className="hide-on-mobile">#{photo.tags[1]}</span>}
+          <span>{photo.tags[0]}</span>
+          {photo.tags.length > 1 && <span className="hide-on-mobile">, {photo.tags[1]}</span>}
         </div>
       )}
     </div>

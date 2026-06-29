@@ -1,15 +1,20 @@
 import { Outlet } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import Sidebar from '../components/Sidebar'
 import Footer from '../components/Footer'
 
 export default function MainLayout() {
   return (
-    <div style={{ background: '#020617', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Navbar />
-      <main style={{ flex: 1 }}>
-        <Outlet />
-      </main>
-      <Footer />
+    <div className="dashboard-container">
+      <Sidebar />
+      <div className="main-content">
+        <Navbar />
+        <main style={{ flex: 1, padding: '2rem' }}>
+          <Outlet />
+        </main>
+        {/* Footer is optional in dashboard, but we'll keep it for now */}
+        {/* <Footer /> */}
+      </div>
     </div>
   )
 }

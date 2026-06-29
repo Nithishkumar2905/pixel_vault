@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import Groq from 'groq-sdk'
 
 export const analyzeImageWithVision = async (imageUrl) => {
   try {
@@ -64,15 +65,17 @@ export const analyzeImageWithVision = async (imageUrl) => {
   }
 }
 
-export const generateMetadataWithGrok = async (tags, imageUrl) => {
+export const generateMetadataWithGroq = async (tags, imageUrl) => {
   try {
-    console.log('--- Grok AI Metadata Generation Start ---')
+    console.log('--- Groq AI Metadata Generation Start ---')
     
-    const apiKey = process.env.GROK_API_KEY
-    if (!apiKey || apiKey === 'YOUR_GROK_API_KEY') {
-      console.warn('GROK_API_KEY missing, using mock data.')
+    const apiKey = process.env.GROQ_API_KEY
+    if (!apiKey || apiKey === 'YOUR_GROQ_API_KEY') {
+      console.warn('GROQ_API_KEY missing, using mock data.')
       return getMockGrokData(tags)
     }
+
+    const groq = new Groq({ apiKey })
 
     const prompt = `You are an expert photography metadata generator. 
     Analyze these visual tags detected in an image: ${tags.join(', ')}.
@@ -83,37 +86,23 @@ export const generateMetadataWithGrok = async (tags, imageUrl) => {
     "hashtags": Array of 5-8 social media hashtags as strings (including #).
     "album": A category album name (e.g., Nature, Portrait, Architecture, Wildlife, Street Photography, etc).`
 
-    const response = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: "grok-beta",
-        messages: [
-          { role: "system", content: "You output strict JSON only, without markdown formatting." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.7
-      })
+    const completion = await groq.chat.completions.create({
+      model: "llama3-70b-8192",
+      messages: [
+        { role: "system", content: "You output strict JSON only, without markdown formatting." },
+        { role: "user", content: prompt }
+      ],
+      temperature: 0.7,
+      response_format: { type: "json_object" }
     })
 
-    const data = await response.json()
-    if (!response.ok) {
-       throw new Error(`Grok API Error: ${data.error?.message || response.statusText}`)
-    }
-
-    let resultText = data.choices[0].message.content.trim()
-    if (resultText.startsWith('\`\`\`json')) {
-      resultText = resultText.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim()
-    }
+    let resultText = completion.choices[0]?.message?.content?.trim() || '{}'
 
     const metadata = JSON.parse(resultText)
     return metadata
 
   } catch (error) {
-    console.error('Grok API Error:', error.message)
+    console.error('Groq API Error:', error.message)
     return getMockGrokData(tags)
   }
 }

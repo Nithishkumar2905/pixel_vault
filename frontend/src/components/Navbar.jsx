@@ -1,159 +1,156 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Camera, Upload, Search, User, LogIn, LogOut, Home, Menu, X, LayoutDashboard } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Search, Bell, Sun, Upload } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 
 export default function Navbar() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
 
-  const handleLogout = () => {
-    logout()
-    navigate('/')
-    setMobileOpen(false)
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchTerm.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchTerm)}`)
+    }
   }
 
-  const links = [
-    { to: '/', icon: <Home size={16} />, label: 'Explore' },
-    { to: '/search', icon: <Search size={16} />, label: 'Search' },
-    ...(user ? [
-      { to: '/workspace', icon: <LayoutDashboard size={16} />, label: 'Workspace' },
-      { to: '/upload', icon: <Upload size={16} />, label: 'Upload' }
-    ] : []),
-  ]
+  const handleComingSoon = () => {
+    toast('✨ Feature coming soon!', { icon: '🚧' })
+  }
 
   return (
-    <nav className="navbar">
-      {/* Logo */}
-      <Link to="/" className="nav-logo" style={{ textDecoration: 'none' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Camera size={22} style={{ color: '#6366F1' }} />
-          PixelVault
-        </span>
-      </Link>
+    <header style={{
+      position: 'sticky',
+      top: 0,
+      zIndex: 40,
+      background: 'rgba(247, 245, 242, 0.85)',
+      backdropFilter: 'blur(24px)',
+      WebkitBackdropFilter: 'blur(24px)',
+      borderBottom: '1px solid var(--color-border)',
+      padding: '1rem 2rem',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '2rem'
+    }}>
+      {/* Search Bar */}
+      <form onSubmit={handleSearch} style={{ flex: 1, maxWidth: '600px', position: 'relative' }}>
+        <Search 
+          size={18} 
+          style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} 
+        />
+        <input 
+          type="text" 
+          placeholder="Search photos, albums, tags, people..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '0.875rem 1.25rem 0.875rem 3rem',
+            borderRadius: '999px',
+            border: '1px solid var(--color-border)',
+            background: '#FFFFFF',
+            outline: 'none',
+            fontSize: '0.95rem',
+            color: 'var(--color-text-primary)',
+            boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.01)',
+            transition: 'all 0.2s ease'
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = 'var(--color-accent)';
+            e.target.style.boxShadow = '0 0 0 3px rgba(184, 115, 51, 0.1)';
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = 'var(--color-border)';
+            e.target.style.boxShadow = 'inset 0 2px 5px rgba(0,0,0,0.01)';
+          }}
+        />
+      </form>
 
-      {/* Desktop nav */}
-      <ul className="nav-links" style={{ display: 'flex' }}>
-        {links.map(({ to, icon, label }) => (
-          <li key={to}>
-            <NavLink
-              to={to}
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              end={to === '/'}
-            >
-              {icon}
-              <span>{label}</span>
-            </NavLink>
-          </li>
-        ))}
-      </ul>
+      {/* Right Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <button onClick={handleComingSoon} className="icon-btn" aria-label="Theme Toggle">
+          <Sun size={20} />
+        </button>
+        <button onClick={handleComingSoon} className="icon-btn" style={{ position: 'relative' }} aria-label="Notifications">
+          <Bell size={20} />
+          <span style={{ 
+            position: 'absolute', 
+            top: '2px', 
+            right: '2px', 
+            width: '8px', 
+            height: '8px', 
+            background: 'var(--color-error)', 
+            borderRadius: '50%',
+            border: '2px solid var(--color-bg-primary)'
+          }}></span>
+        </button>
 
-      {/* Desktop actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ width: '1px', height: '24px', background: 'var(--color-border)', margin: '0 0.5rem' }}></div>
+
         {user ? (
           <>
-            <Link
-              to={`/profile/${user.id}`}
-              className="nav-link"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-            >
+            <Link to="/upload" className="btn btn-primary btn-sm" style={{ padding: '0.5rem 1rem', borderRadius: '999px' }}>
+              <Upload size={16} /> <span className="hide-on-mobile">Upload</span>
+            </Link>
+            <Link to={`/profile/${user.id}`}>
               {user?.user_metadata?.avatar_url ? (
                 <img
                   src={user.user_metadata.avatar_url}
                   alt="Avatar"
-                  style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }}
+                  style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #FFFFFF', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
                 />
               ) : (
-                <div
-                  className="avatar-placeholder"
-                  style={{ width: 28, height: 28, fontSize: '0.7rem' }}
-                >
+                <div style={{
+                  width: '40px', 
+                  height: '40px', 
+                  borderRadius: '50%', 
+                  background: 'var(--color-accent)',
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 600,
+                  fontSize: '1.1rem',
+                  border: '2px solid #FFFFFF',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                }}>
                   {(user?.user_metadata?.full_name?.[0] || user?.user_metadata?.username?.[0] || user?.email?.[0] || 'U').toUpperCase()}
                 </div>
               )}
-              <span style={{ color: '#E2E8F0', fontSize: '0.875rem', fontWeight: 500 }}>
-                {user?.user_metadata?.full_name || user?.user_metadata?.username || user?.email?.split('@')[0]}
-              </span>
             </Link>
-            <button id="logout-btn" onClick={handleLogout} className="btn btn-ghost btn-sm">
-              <LogOut size={15} />
-              <span>Logout</span>
-            </button>
           </>
         ) : (
-          <>
-            <Link to="/login" className="btn btn-ghost btn-sm">
-              <LogIn size={15} />
-              <span>Login</span>
-            </Link>
-            <Link to="/register" className="btn btn-primary btn-sm">
-              Get Started
-            </Link>
-          </>
+          <Link to="/login" className="btn btn-primary btn-sm" style={{ borderRadius: '999px' }}>
+            Sign In
+          </Link>
         )}
-
-        {/* Mobile menu toggle */}
-        <button
-          className="btn btn-ghost btn-sm"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          style={{ display: 'none', padding: '0.375rem' }}
-          id="mobile-menu-btn"
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
       </div>
 
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 68,
-            left: 0,
-            right: 0,
-            background: 'rgba(2, 6, 23, 0.98)',
-            backdropFilter: 'blur(20px)',
-            borderBottom: '1px solid rgba(99,102,241,0.15)',
-            padding: '1rem 1.5rem',
-            zIndex: 49,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem',
-          }}
-        >
-          {links.map(({ to, icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              onClick={() => setMobileOpen(false)}
-              end={to === '/'}
-              style={{ justifyContent: 'flex-start', padding: '0.75rem 1rem' }}
-            >
-              {icon}
-              <span>{label}</span>
-            </NavLink>
-          ))}
-          {user ? (
-            <button onClick={handleLogout} className="btn btn-ghost" style={{ justifyContent: 'flex-start', color: '#F87171' }}>
-              <LogOut size={16} /> Logout
-            </button>
-          ) : (
-            <Link to="/login" className="btn btn-primary" onClick={() => setMobileOpen(false)}>
-              <LogIn size={16} /> Login
-            </Link>
-          )}
-        </div>
-      )}
-
       <style>{`
+        .icon-btn {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: none;
+          background: transparent;
+          color: var(--color-text-secondary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .icon-btn:hover {
+          background: rgba(0,0,0,0.04);
+          color: var(--color-text-primary);
+        }
         @media (max-width: 768px) {
-          .nav-links { display: none !important; }
-          #mobile-menu-btn { display: flex !important; }
+          .hide-on-mobile { display: none !important; }
         }
       `}</style>
-    </nav>
+    </header>
   )
 }

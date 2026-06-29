@@ -1,10 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { Search, Sparkles, SlidersHorizontal, X, TrendingUp } from 'lucide-react'
+import { Search, Sparkles, X, TrendingUp } from 'lucide-react'
 import SearchBar from '../components/SearchBar'
 import PhotoGrid from '../components/PhotoGrid'
 import photoService from '../services/photoService'
-
 
 const SORT_OPTIONS = [
   { value: '-createdAt', label: 'Newest first' },
@@ -32,7 +31,8 @@ export default function SearchPage() {
     setLoading(true)
     try {
       const res = await photoService.search(query, { sort: sortBy, limit: 40 })
-      const results = res.photos || res.data || []
+      // Only show published photos in search
+      const results = (res.photos || res.data || []).filter(p => p.publish_status === 'published')
 
       if (results.length > 0) {
         setPhotos(results)
@@ -58,68 +58,62 @@ export default function SearchPage() {
   const handleSearch = (newQ) => setSearchParams({ q: newQ })
 
   return (
-    <div className="fade-in" style={{ minHeight: 'calc(100vh - 68px)', padding: '2.5rem 1rem' }}>
-      <div className="container" style={{ maxWidth: 1300 }}>
+    <div className="fade-in" style={{ padding: '3rem 1rem', paddingBottom: '5rem' }}>
+      <div className="container" style={{ maxWidth: '1400px' }}>
 
         {/* ── Header ── */}
-        <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-          <div
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.375rem 1rem',
-              background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
-              borderRadius: 999, color: '#A5B4FC', fontSize: '0.8rem', fontWeight: 600,
-              marginBottom: '1rem',
-            }}
-          >
-            <Sparkles size={13} />
+        <div style={{ marginBottom: '3rem', textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 1rem', background: 'rgba(184, 115, 51, 0.08)', borderRadius: 999, color: 'var(--color-accent)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+            <Sparkles size={14} />
             AI-Powered Search
           </div>
 
-          <h1
-            style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
-              fontWeight: 700, color: '#FFFFFF', marginBottom: '0.75rem',
-            }}
-          >
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '1rem', letterSpacing: '-0.5px' }}>
             {q ? (
-              <>Results for "<span style={{ color: '#A5B4FC' }}>{q}</span>"</>
+              <>Results for "<span style={{ color: 'var(--color-accent)' }}>{q}</span>"</>
             ) : (
-              'Search Photos'
+              'Search Gallery'
             )}
           </h1>
 
           {q && (
-            <p style={{ color: '#94A3B8', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
+            <p style={{ color: 'var(--color-text-secondary)', fontSize: '1.05rem', marginBottom: '2rem' }}>
               {loading
-                ? 'Searching…'
-                : `${totalResults} photo${totalResults !== 1 ? 's' : ''} found`}
+                ? 'Searching the vault...'
+                : `Found ${totalResults} photo${totalResults !== 1 ? 's' : ''} matching your query`}
             </p>
           )}
 
-          <SearchBar initialValue={q} onSearch={handleSearch} size="large" />
+          <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+            <SearchBar initialValue={q} onSearch={handleSearch} size="large" />
+          </div>
         </div>
 
         {/* ── Quick suggestions (shown when no query) ── */}
         {!q && (
-          <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-              <TrendingUp size={15} style={{ color: '#6366F1' }} />
-              <span style={{ color: '#94A3B8', fontSize: '0.85rem', fontWeight: 600 }}>
-                Popular searches
+          <div style={{ marginBottom: '4rem', textAlign: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <TrendingUp size={16} color="var(--color-accent)" />
+              <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Trending Searches
               </span>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center', maxWidth: '800px', margin: '0 auto' }}>
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
-                  id={`suggest-${s}`}
                   onClick={() => handleSearch(s)}
-                  className="tag"
-                  style={{ cursor: 'pointer', border: 'none', fontSize: '0.82rem', padding: '0.375rem 0.875rem' }}
+                  style={{ cursor: 'pointer', border: '1px solid var(--color-border)', fontSize: '0.9rem', padding: '0.5rem 1.25rem', borderRadius: '999px', background: '#FFFFFF', color: 'var(--color-text-primary)', transition: 'all 0.2s ease' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-accent)'
+                    e.currentTarget.style.color = 'var(--color-accent)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-border)'
+                    e.currentTarget.style.color = 'var(--color-text-primary)'
+                  }}
                 >
-                  #{s}
+                  {s}
                 </button>
               ))}
             </div>
@@ -128,63 +122,28 @@ export default function SearchPage() {
 
         {/* ── Filter / sort bar ── */}
         {q && (
-          <div
-            style={{
-              display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem',
-            }}
-          >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem' }}>
             {/* Active query chip */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <div
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '0.375rem',
-                  padding: '0.3rem 0.875rem',
-                  background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.22)',
-                  borderRadius: 999, color: '#A5B4FC', fontSize: '0.82rem',
-                }}
-              >
-                <Search size={11} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: '999px', color: 'var(--color-text-primary)', fontSize: '0.9rem', fontWeight: 500, boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
+                <Search size={14} color="var(--color-text-muted)" />
                 {q}
                 <button
                   onClick={() => setSearchParams({})}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 0, marginLeft: '0.2rem', display: 'flex' }}
-                  id="clear-search-btn"
-                  aria-label="Clear search"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: 0, marginLeft: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <X size={12} />
+                  <X size={14} />
                 </button>
               </div>
-
-              {/* Related suggestion chips */}
-              {!loading && totalResults === 0 && (
-                <span style={{ color: '#475569', fontSize: '0.78rem' }}>
-                  Try:
-                </span>
-              )}
-              {!loading && totalResults === 0 &&
-                SUGGESTIONS.filter((s) => s !== q.toLowerCase()).slice(0, 4).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => handleSearch(s)}
-                    className="tag"
-                    style={{ cursor: 'pointer', border: 'none', fontSize: '0.78rem' }}
-                  >
-                    #{s}
-                  </button>
-                ))}
             </div>
 
             {/* Sort dropdown */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <label style={{ color: '#94A3B8', fontSize: '0.8rem' }}>Sort:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <label style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}>Sort By:</label>
               <select
-                id="sort-select"
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
-                className="input-field"
-                style={{ width: 'auto', padding: '0.375rem 0.75rem', fontSize: '0.8rem', cursor: 'pointer' }}
+                style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.9rem', cursor: 'pointer', border: '1px solid var(--color-border)', borderRadius: '8px', background: '#FFFFFF', outline: 'none', color: 'var(--color-text-primary)' }}
               >
                 {SORT_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -200,25 +159,25 @@ export default function SearchPage() {
             <PhotoGrid photos={photos} loading={loading} />
 
             {!loading && photos.length === 0 && (
-              <div className="empty-state">
+              <div className="empty-state" style={{ marginTop: '4rem' }}>
                 <div className="empty-state-icon">
-                  <Search size={36} />
+                  <Search size={40} />
                 </div>
-                <h3 style={{ fontFamily: 'Poppins', fontSize: '1.25rem', color: '#94A3B8', marginBottom: '0.5rem' }}>
-                  No results for "{q}"
+                <h3 style={{ fontSize: '1.5rem', color: 'var(--color-text-primary)', marginBottom: '0.5rem' }}>
+                  No results found
                 </h3>
-                <p style={{ color: '#475569', marginBottom: '1.5rem' }}>
-                  Try a different keyword — or explore these popular tags:
+                <p style={{ color: 'var(--color-text-secondary)', marginBottom: '2rem' }}>
+                  We couldn't find anything matching "{q}". Try a different keyword or explore popular tags.
                 </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                  {SUGGESTIONS.slice(0, 8).map((s) => (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center', marginBottom: '2rem' }}>
+                  {SUGGESTIONS.slice(0, 6).map((s) => (
                     <button
                       key={s}
                       onClick={() => handleSearch(s)}
                       className="tag"
                       style={{ cursor: 'pointer', border: 'none' }}
                     >
-                      #{s}
+                      {s}
                     </button>
                   ))}
                 </div>
@@ -230,16 +189,15 @@ export default function SearchPage() {
           </>
         ) : (
           /* ── Empty state (no query yet) ── */
-          <div className="empty-state">
-            <div className="empty-state-icon">
+          <div className="empty-state" style={{ background: 'transparent', border: 'none' }}>
+            <div className="empty-state-icon" style={{ background: '#FFFFFF' }}>
               <Search size={40} />
             </div>
-            <h2 style={{ fontFamily: 'Poppins', fontSize: '1.4rem', color: '#94A3B8', marginBottom: '0.75rem' }}>
-              What are you looking for?
+            <h2 style={{ fontSize: '1.5rem', color: 'var(--color-text-primary)', marginBottom: '0.75rem' }}>
+              Discover inspiration
             </h2>
-            <p style={{ color: '#475569', maxWidth: 420, lineHeight: 1.7 }}>
-              Search by photo title, tag, description, or photographer name.
-              Our AI surfaces visually similar images too.
+            <p style={{ color: 'var(--color-text-secondary)', maxWidth: 500, lineHeight: 1.7, margin: '0 auto' }}>
+              Search by visual objects, semantic descriptions, photography styles, or tags. Our AI understands what's inside the photos.
             </p>
           </div>
         )}
