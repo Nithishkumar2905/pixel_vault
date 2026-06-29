@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Heart, Eye, Download, User, Trash2 } from 'lucide-react'
+import { Heart, Eye, Download, User, Trash2, Globe, Lock } from 'lucide-react'
 import photoService from '../services/photoService'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
@@ -12,6 +12,8 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
   const [likeCount, setLikeCount] = useState(photo.likeCount ?? 0)
   const [liking, setLiking] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [publishStatus, setPublishStatus] = useState(photo.publish_status || 'private')
+  const [publishing, setPublishing] = useState(false)
 
   const imgSrc = photo.image_url || photo.imageUrl
   const isOwner = user && (photo.user_id === user.id)
@@ -31,6 +33,23 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
       toast.error('Failed to delete photo')
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleTogglePublish = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (publishing) return
+    setPublishing(true)
+    const newStatus = publishStatus === 'published' ? 'private' : 'published'
+    try {
+      await photoService.update(photo.id, { publish_status: newStatus })
+      setPublishStatus(newStatus)
+      toast.success(newStatus === 'published' ? 'Photo published!' : 'Photo made private')
+    } catch (err) {
+      toast.error('Failed to update status')
+    } finally {
+      setPublishing(false)
     }
   }
 
@@ -158,15 +177,26 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
           </button>
 
           {isOwner && (
-            <button
-              onClick={handleDelete}
-              className="btn btn-secondary btn-sm"
-              style={{ gap: '0.3rem', padding: '0.4rem 0.6rem', color: 'var(--color-error)' }}
-              disabled={deleting}
-              aria-label="Delete"
-            >
-              <Trash2 size={14} />
-            </button>
+            <>
+              <button
+                onClick={handleTogglePublish}
+                className="btn btn-secondary btn-sm"
+                style={{ gap: '0.3rem', padding: '0.4rem 0.6rem', color: publishStatus === 'published' ? 'var(--color-success)' : 'var(--color-text-secondary)' }}
+                disabled={publishing}
+                aria-label="Toggle Publish"
+              >
+                {publishStatus === 'published' ? <Globe size={14} /> : <Lock size={14} />}
+              </button>
+              <button
+                onClick={handleDelete}
+                className="btn btn-secondary btn-sm"
+                style={{ gap: '0.3rem', padding: '0.4rem 0.6rem', color: 'var(--color-error)' }}
+                disabled={deleting}
+                aria-label="Delete"
+              >
+                <Trash2 size={14} />
+              </button>
+            </>
           )}
         </div>
       </div>
