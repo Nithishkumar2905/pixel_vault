@@ -120,7 +120,7 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
       <img
         src={imgSrc}
         alt={photo.title || photo.altText || 'Photo'}
-        loading="lazy"
+        style={{ transform: 'translateZ(0)' }}
         onError={(e) => {
           e.target.src = 'https://via.placeholder.com/600x400?text=Image+Not+Found'
         }}
