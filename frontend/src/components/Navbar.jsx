@@ -1,10 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, Bell, Sun, Command } from 'lucide-react'
+import { Search, Bell, Sun, Command, Menu } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 
-export default function Navbar() {
+export default function Navbar({ isSidebarExpanded, setIsSidebarExpanded }) {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
@@ -35,12 +35,26 @@ export default function Navbar() {
       justifyContent: 'space-between',
       gap: '2rem'
     }}>
-      {/* Search Bar */}
-      <form onSubmit={handleSearch} style={{ flex: 1, maxWidth: '640px', position: 'relative', display: 'flex', alignItems: 'center' }}>
-        <Search 
-          size={18} 
-          style={{ position: 'absolute', left: '1.25rem', color: 'var(--color-text-muted)' }} 
-        />
+      {/* Hamburger Menu & Search */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flex: 1, maxWidth: '640px' }}>
+        <button 
+          onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+          className="icon-btn hamburger-btn"
+          aria-label="Toggle Menu"
+          style={{ 
+            color: 'var(--color-text-primary)',
+            background: 'transparent',
+            border: 'none',
+            flexShrink: 0
+          }}
+        >
+          <Menu size={22} />
+        </button>
+        <form onSubmit={handleSearch} style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Search 
+            size={18} 
+            style={{ position: 'absolute', left: '1.25rem', color: 'var(--color-text-muted)' }} 
+          />
         <input 
           type="text" 
           placeholder="Search photos, albums, tags, places..." 
@@ -84,6 +98,7 @@ export default function Navbar() {
           <Command size={12} /> K
         </div>
       </form>
+      </div>
 
       {/* Right Actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
