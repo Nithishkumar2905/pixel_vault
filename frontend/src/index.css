@@ -209,6 +209,19 @@ h1, h2, h3, h4, h5, h6 {
   transform: none !important;
 }
 
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+.icon-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
 /* ===== INPUT ===== */
 .input-field {
   width: 100%;

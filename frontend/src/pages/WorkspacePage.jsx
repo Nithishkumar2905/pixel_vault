@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { LayoutDashboard, Image as ImageIcon, Eye, Lock, RefreshCw, Trash2, Edit3, Tag, Upload, HardDrive, CheckCircle2 } from 'lucide-react'
+import { LayoutDashboard, Image as ImageIcon, Eye, Lock, RefreshCw, Trash2, Edit3, Tag, Upload, HardDrive, CheckCircle2, Globe } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import photoService from '../services/photoService'
 import toast from 'react-hot-toast'
@@ -238,10 +238,10 @@ export default function WorkspacePage() {
                     </Link>
                     <button 
                       onClick={() => handleTogglePublish(photo.id, photo.publish_status)}
-                      className="icon-btn" style={{ width: '36px', height: '36px', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)' }}
-                      title={photo.publish_status === 'published' ? 'Unpublish' : 'Publish'}
+                      className="btn btn-secondary btn-sm"
+                      style={{ padding: '0.4rem 0.75rem', gap: '0.4rem', color: photo.publish_status === 'published' ? 'var(--color-text-secondary)' : 'var(--color-accent)' }}
                     >
-                      {photo.publish_status === 'published' ? <Lock size={16} /> : <Eye size={16} />}
+                      {photo.publish_status === 'published' ? <><Lock size={14} /> Unpublish</> : <><Globe size={14} /> Publish</>}
                     </button>
                     <button 
                       onClick={() => handleDelete(photo.id)}
