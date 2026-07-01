@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { LayoutDashboard, Image as ImageIcon, Eye, Lock, RefreshCw, Trash2, Edit3, Tag, Upload, HardDrive, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -9,6 +9,7 @@ export default function WorkspacePage() {
   const { user } = useAuth()
   const [photos, setPhotos] = useState([])
   const [loading, setLoading] = useState(true)
+  const [activeFilter, setActiveFilter] = useState('all') // 'all', 'drafts', 'published', 'favorites'
 
   const loadPhotos = async () => {
     try {
@@ -48,15 +49,28 @@ export default function WorkspacePage() {
     }
   }
 
+  const publishedCount = photos.filter(p => p.publish_status === 'published').length
+  const draftCount = photos.length - publishedCount
+  const favoritesCount = photos.filter(p => p.isLiked).length
+  const totalTags = photos.reduce((acc, p) => acc + (p.tags?.length || 0) + (p.keywords?.length || 0), 0)
+
+  const filteredPhotos = useMemo(() => {
+    if (activeFilter === 'published') return photos.filter(p => p.publish_status === 'published')
+    if (activeFilter === 'drafts') return photos.filter(p => p.publish_status !== 'published')
+    if (activeFilter === 'favorites') return photos.filter(p => p.isLiked)
+    return photos
+  }, [photos, activeFilter])
+
   if (loading) {
     return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <RefreshCw className="spinner" size={32} color="var(--color-accent)" />
     </div>
   }
 
-  const publishedCount = photos.filter(p => p.publish_status === 'published').length
-  const draftCount = photos.length - publishedCount
-  const totalTags = photos.reduce((acc, p) => acc + (p.tags?.length || 0) + (p.keywords?.length || 0), 0)
+  const getBtnClass = (filterType) => activeFilter === filterType ? "btn btn-sm" : "btn btn-ghost btn-sm"
+  const getBtnStyle = (filterType) => activeFilter === filterType 
+    ? { background: 'var(--color-text-primary)', color: '#FFF', borderRadius: '12px', padding: '0.5rem 1.25rem' }
+    : { borderRadius: '12px', padding: '0.5rem 1.25rem' }
 
   return (
     <div className="fade-in" style={{ paddingBottom: '3rem' }}>
@@ -143,31 +157,45 @@ export default function WorkspacePage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.75rem' }}>My Workspace ✨</h2>
         <div style={{ display: 'flex', background: '#FFFFFF', padding: '0.35rem', borderRadius: '16px', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-soft)' }}>
-          <button className="btn btn-sm" style={{ background: 'var(--color-text-primary)', color: '#FFF', borderRadius: '12px', padding: '0.5rem 1.25rem' }}>
+          <button 
+            onClick={() => setActiveFilter('all')}
+            className={getBtnClass('all')} style={getBtnStyle('all')}>
             All <span style={{ opacity: 0.6, marginLeft: '0.25rem' }}>{photos.length}</span>
           </button>
-          <button className="btn btn-ghost btn-sm" style={{ borderRadius: '12px', padding: '0.5rem 1.25rem' }}>
+          <button 
+            onClick={() => setActiveFilter('drafts')}
+            className={getBtnClass('drafts')} style={getBtnStyle('drafts')}>
             Drafts <span style={{ opacity: 0.6, marginLeft: '0.25rem' }}>{draftCount}</span>
           </button>
-          <button className="btn btn-ghost btn-sm" style={{ borderRadius: '12px', padding: '0.5rem 1.25rem' }}>
+          <button 
+            onClick={() => setActiveFilter('published')}
+            className={getBtnClass('published')} style={getBtnStyle('published')}>
             Published <span style={{ opacity: 0.6, marginLeft: '0.25rem' }}>{publishedCount}</span>
           </button>
-          <button className="btn btn-ghost btn-sm" style={{ borderRadius: '12px', padding: '0.5rem 1.25rem' }}>
-            Favorites <span style={{ opacity: 0.6, marginLeft: '0.25rem' }}>0</span>
+          <button 
+            onClick={() => setActiveFilter('favorites')}
+            className={getBtnClass('favorites')} style={getBtnStyle('favorites')}>
+            Favorites <span style={{ opacity: 0.6, marginLeft: '0.25rem' }}>{favoritesCount}</span>
           </button>
         </div>
       </div>
 
       {photos.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-icon"><UploadCloud size={40} color="var(--color-accent)" /></div>
+          <div className="empty-state-icon"><Upload size={40} color="var(--color-accent)" /></div>
           <h3 style={{ fontSize: '1.5rem', color: 'var(--color-text-primary)', marginBottom: '0.75rem' }}>Your workspace is empty</h3>
           <p style={{ marginBottom: '2.5rem', fontSize: '1.05rem' }}>Upload your first batch of photos to let AI analyze them.</p>
           <Link to="/upload" className="btn btn-primary btn-lg"><Upload size={18} /> Start Uploading</Link>
         </div>
+      ) : filteredPhotos.length === 0 ? (
+        <div className="empty-state">
+          <h3 style={{ fontSize: '1.5rem', color: 'var(--color-text-primary)', marginBottom: '0.75rem' }}>No photos found</h3>
+          <p style={{ marginBottom: '2.5rem', fontSize: '1.05rem' }}>You don't have any photos matching this filter.</p>
+          <button onClick={() => setActiveFilter('all')} className="btn btn-primary btn-lg">View All Photos</button>
+        </div>
       ) : (
         <div className="photo-grid">
-          {photos.map(photo => (
+          {filteredPhotos.map(photo => (
             <div key={photo.id} className="photo-grid-item glass-card" style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ position: 'relative', height: '240px' }}>
                 <img src={photo.image_url} alt={photo.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

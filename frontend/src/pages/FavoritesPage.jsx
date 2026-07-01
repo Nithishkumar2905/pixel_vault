@@ -1,21 +1,27 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Heart, LayoutGrid, List, Search, Image as ImageIcon, Folder, Video, Calendar, Tag } from 'lucide-react'
 import PhotoCard from '../components/PhotoCard'
-
-// Mock Data for Favorites
-const mockFavorites = [
-  { id: 1, title: 'Serene Mountain Lake', photographer: { username: 'Nature' }, tags: ['Mountains', 'Lake'], image_url: 'https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=800&q=80', isLiked: true, likeCount: 1200 },
-  { id: 2, title: 'Portrait with Natural Light', photographer: { username: 'Portrait' }, tags: ['Woman', 'Studio'], image_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80', isLiked: true, likeCount: 842 },
-  { id: 3, title: 'City Lights Nightscape', photographer: { username: 'City' }, tags: ['Night', 'Street'], image_url: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=800&q=80', isLiked: true, likeCount: 1500 },
-  { id: 4, title: 'Waterfall Paradise', photographer: { username: 'Waterfall' }, tags: ['Nature', 'Forest'], image_url: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=800&q=80', isLiked: true, likeCount: 654 },
-  { id: 5, title: 'Golden Beach Sunset', photographer: { username: 'Sunset' }, tags: ['Beach', 'Palm Trees'], image_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80', isLiked: true, likeCount: 1100 },
-  { id: 6, title: 'Wildlife in Nature', photographer: { username: 'Wildlife' }, tags: ['Forest', 'Animals'], image_url: 'https://images.unsplash.com/photo-1517825738774-7de2b2b186b5?w=800&q=80', isLiked: true, likeCount: 732 },
-  { id: 7, title: 'Food Photography', photographer: { username: 'Food' }, tags: ['Italian', 'Closeup'], image_url: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=800&q=80', isLiked: true, likeCount: 523 },
-  { id: 8, title: 'Misty Morning Hills', photographer: { username: 'Nature' }, tags: ['Hills', 'Greenery'], image_url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80', isLiked: true, likeCount: 412 },
-]
+import photoService from '../services/photoService'
 
 export default function FavoritesPage() {
   const [activeTab, setActiveTab] = useState('all')
+  const [favorites, setFavorites] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        setLoading(true)
+        const res = await photoService.getFavorites({ limit: 100 })
+        setFavorites(res.photos || [])
+      } catch (err) {
+        console.error('Failed to fetch favorites:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchFavorites()
+  }, [])
 
   return (
     <div className="fade-in page-section">
@@ -40,25 +46,25 @@ export default function FavoritesPage() {
                   className={`tab-filter-btn ${activeTab === 'all' ? 'active' : ''}`}
                   onClick={() => setActiveTab('all')}
                 >
-                  All Favorites <span style={{ opacity: 0.7, fontSize: '0.75rem', marginLeft: '4px' }}>458</span>
+                  All Favorites <span style={{ opacity: 0.7, fontSize: '0.75rem', marginLeft: '4px' }}>{favorites.length}</span>
                 </button>
                 <button 
                   className={`tab-filter-btn ${activeTab === 'photos' ? 'active' : ''}`}
                   onClick={() => setActiveTab('photos')}
                 >
-                  Photos <span style={{ opacity: 0.7, fontSize: '0.75rem', marginLeft: '4px' }}>432</span>
+                  Photos <span style={{ opacity: 0.7, fontSize: '0.75rem', marginLeft: '4px' }}>{favorites.length}</span>
                 </button>
                 <button 
                   className={`tab-filter-btn ${activeTab === 'albums' ? 'active' : ''}`}
                   onClick={() => setActiveTab('albums')}
                 >
-                  Albums <span style={{ opacity: 0.7, fontSize: '0.75rem', marginLeft: '4px' }}>18</span>
+                  Albums <span style={{ opacity: 0.7, fontSize: '0.75rem', marginLeft: '4px' }}>0</span>
                 </button>
                 <button 
                   className={`tab-filter-btn ${activeTab === 'videos' ? 'active' : ''}`}
                   onClick={() => setActiveTab('videos')}
                 >
-                  Videos <span style={{ opacity: 0.7, fontSize: '0.75rem', marginLeft: '4px' }}>8</span>
+                  Videos <span style={{ opacity: 0.7, fontSize: '0.75rem', marginLeft: '4px' }}>0</span>
                 </button>
               </div>
 
@@ -83,22 +89,38 @@ export default function FavoritesPage() {
             </div>
 
             {/* Grid */}
-            <div className="photo-grid">
-              {mockFavorites.map(photo => (
-                <PhotoCard key={photo.id} photo={photo} />
-              ))}
-            </div>
+            {loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
+                <div className="spinner"></div>
+              </div>
+            ) : favorites.length > 0 ? (
+              <div className="photo-grid">
+                {favorites.map(photo => (
+                  <PhotoCard key={photo.id} photo={photo} />
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state" style={{ marginTop: '3rem' }}>
+                <div className="empty-state-icon">
+                  <Heart size={40} />
+                </div>
+                <h3 style={{ fontSize: '1.5rem', color: 'var(--color-text-primary)', marginBottom: '0.5rem' }}>
+                  No favorites yet
+                </h3>
+                <p style={{ color: 'var(--color-text-secondary)' }}>
+                  Photos you like will appear here. Go explore and find some favorites!
+                </p>
+              </div>
+            )}
 
             {/* Pagination Placeholder */}
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '3rem' }}>
-              <button className="btn btn-secondary btn-sm" style={{ padding: '0.5rem' }}>&lt;</button>
-              <button className="btn btn-primary btn-sm" style={{ padding: '0.5rem 1rem' }}>1</button>
-              <button className="btn btn-ghost btn-sm" style={{ padding: '0.5rem 1rem' }}>2</button>
-              <button className="btn btn-ghost btn-sm" style={{ padding: '0.5rem 1rem' }}>3</button>
-              <span style={{ color: 'var(--color-text-secondary)' }}>...</span>
-              <button className="btn btn-ghost btn-sm" style={{ padding: '0.5rem 1rem' }}>23</button>
-              <button className="btn btn-secondary btn-sm" style={{ padding: '0.5rem' }}>&gt;</button>
-            </div>
+            {favorites.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '3rem' }}>
+                <button className="btn btn-secondary btn-sm" style={{ padding: '0.5rem' }}>&lt;</button>
+                <button className="btn btn-primary btn-sm" style={{ padding: '0.5rem 1rem' }}>1</button>
+                <button className="btn btn-secondary btn-sm" style={{ padding: '0.5rem' }}>&gt;</button>
+              </div>
+            )}
           </div>
 
           {/* Right Sidebar */}
@@ -112,55 +134,56 @@ export default function FavoritesPage() {
                   <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(188, 71, 73, 0.1)', color: 'var(--color-error)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.5rem' }}>
                     <Heart size={18} />
                   </div>
-                  <div className="numbers" style={{ fontSize: '1.25rem', fontWeight: 700 }}>458</div>
+                  <div className="numbers" style={{ fontSize: '1.25rem', fontWeight: 700 }}>{favorites.length}</div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)' }}>Total Favorites</div>
                 </div>
                 <div>
                   <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(107, 112, 92, 0.1)', color: 'var(--color-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.5rem' }}>
                     <ImageIcon size={18} />
                   </div>
-                  <div className="numbers" style={{ fontSize: '1.25rem', fontWeight: 700 }}>432</div>
+                  <div className="numbers" style={{ fontSize: '1.25rem', fontWeight: 700 }}>{favorites.length}</div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)' }}>Photos</div>
                 </div>
                 <div>
                   <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(131, 56, 236, 0.1)', color: '#8338EC', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.5rem' }}>
                     <Folder size={18} />
                   </div>
-                  <div className="numbers" style={{ fontSize: '1.25rem', fontWeight: 700 }}>18</div>
+                  <div className="numbers" style={{ fontSize: '1.25rem', fontWeight: 700 }}>0</div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)' }}>Albums</div>
                 </div>
                 <div>
                   <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(251, 86, 7, 0.1)', color: '#FB5607', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.5rem' }}>
                     <Video size={18} />
                   </div>
-                  <div className="numbers" style={{ fontSize: '1.25rem', fontWeight: 700 }}>8</div>
+                  <div className="numbers" style={{ fontSize: '1.25rem', fontWeight: 700 }}>0</div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)' }}>Videos</div>
                 </div>
               </div>
             </div>
 
             {/* Recent Activity */}
-            <div className="sidebar-block">
-              <div className="sidebar-block-title">
-                Recent Activity
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', cursor: 'pointer', fontWeight: 600 }}>View All</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <img src={`https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=100&q=80`} alt="Activity" style={{ width: 48, height: 48, borderRadius: '8px', objectFit: 'cover' }} />
-                    <div style={{ flex: 1 }}>
-                      <div className="truncate-2" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>Sunset at Marina Beach</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>added to favorites</div>
+            {favorites.length > 0 && (
+              <div className="sidebar-block">
+                <div className="sidebar-block-title">
+                  Recent Activity
+                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', cursor: 'pointer', fontWeight: 600 }}>View All</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                  {favorites.slice(0, 5).map((photo, i) => (
+                    <div key={photo.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <img src={photo.image_url} alt="Activity" style={{ width: 48, height: 48, borderRadius: '8px', objectFit: 'cover' }} />
+                      <div style={{ flex: 1 }}>
+                        <div className="truncate-2" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{photo.title || 'Untitled'}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>added to favorites</div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                        <Heart size={14} color="var(--color-error)" fill="var(--color-error)" />
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{i}h ago</span>
-                      <Heart size={14} color="var(--color-error)" fill="var(--color-error)" />
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Filters */}
             <div className="sidebar-block">

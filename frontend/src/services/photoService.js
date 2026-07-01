@@ -162,6 +162,36 @@ const photoService = {
     return await photoService.getAll({ ...params, q: query })
   },
 
+  getFavorites: async (params = {}) => {
+    const { page = 1, limit = 20, sort = '-created_at' } = params
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('Not authenticated')
+
+    const { data: likes, error: likesError, count } = await supabase
+      .from('likes')
+      .select('photo_id', { count: 'exact' })
+      .eq('user_id', session.user.id)
+      
+    if (likesError) throw likesError
+    if (!likes || likes.length === 0) return { photos: [], pagination: { total: 0 } }
+    
+    const photoIds = likes.map(l => l.photo_id)
+
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+
+    const { data: photos, error } = await supabase
+      .from('photos')
+      .select('*, users!inner(name, username, avatar_url, email, portfolio_link)')
+      .in('id', photoIds)
+      
+    if (error) throw error
+
+    const result = photos.map(p => ({ ...p, photographer: p.users, isLiked: true }))
+
+    return { photos: result, pagination: { total: count, page, pages: Math.ceil(count / limit), limit } }
+  },
+
   like: async (id) => {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) throw new Error('Not authenticated')
