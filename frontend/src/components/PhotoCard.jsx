@@ -112,6 +112,11 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
       onClick={() => photo.id && navigate(`/photos/${photo.id}`)}
       style={{ cursor: photo.id ? 'pointer' : 'default', opacity: deleting ? 0.5 : 1 }}
     >
+      {photo.matchPercentage && (
+        <div className="album-card-badge" style={{ top: '0.75rem', left: '0.75rem', background: 'rgba(0,0,0,0.6)' }}>
+          {photo.matchPercentage}% Match
+        </div>
+      )}
       <img
         src={imgSrc}
         alt={photo.title || photo.altText || 'Photo'}

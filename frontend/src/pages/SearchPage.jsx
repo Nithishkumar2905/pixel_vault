@@ -1,206 +1,242 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { Search, Sparkles, X, TrendingUp } from 'lucide-react'
+import { Search, Sparkles, LayoutGrid, List, Heart, Calendar, MapPin, Tag, Palette, Maximize, Lock, CheckCircle, Smartphone, Monitor } from 'lucide-react'
 import SearchBar from '../components/SearchBar'
-import PhotoGrid from '../components/PhotoGrid'
+import PhotoCard from '../components/PhotoCard'
 import photoService from '../services/photoService'
 
-const SORT_OPTIONS = [
-  { value: '-createdAt', label: 'Newest first' },
-  { value: 'createdAt', label: 'Oldest first' },
-  { value: '-likeCount', label: 'Most liked' },
-  { value: '-downloadCount', label: 'Most downloaded' },
+const SUGGESTIONS = [
+  'Mountain landscapes', 'Wedding moments', 'Portrait with natural light', 'City at night', 'Wildlife in forest'
 ]
 
-// Popular quick-search suggestions
-const SUGGESTIONS = [
-  'beach', 'sunset', 'mountains', 'forest', 'urban', 'portrait',
-  'wildlife', 'abstract', 'snow', 'flowers', 'night', 'travel',
+// Mock results with AI Match scores
+const mockSearchPhotos = [
+  { id: 1, title: 'Golden Beach Sunset', matchPercentage: 98, image_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80', isLiked: true, tags: ['Sunset', 'Beach', 'People', 'Golden Hour'] },
+  { id: 2, title: 'Palm Trees Silhouette', matchPercentage: 97, image_url: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&q=80', isLiked: false, tags: ['Sunset', 'Beach', 'Palm Trees', 'People'] },
+  { id: 3, title: 'Lifeguard Tower', matchPercentage: 96, image_url: 'https://images.unsplash.com/photo-1494783367193-149034c05e8f?w=800&q=80', isLiked: false, tags: ['Sunset', 'Beach', 'Sky', 'Ocean'] },
+  { id: 4, title: 'Family at the Beach', matchPercentage: 95, image_url: 'https://images.unsplash.com/photo-1520610360655-b04e6c986eb7?w=800&q=80', isLiked: true, tags: ['Sunset', 'Beach', 'Family', 'Golden Hour'] },
+  { id: 5, title: 'Sunset Reflection', matchPercentage: 98, image_url: 'https://images.unsplash.com/photo-1471922694854-ff1b63b20054?w=800&q=80', isLiked: true, tags: ['Sunset', 'Beach', 'Silhouette', 'Clouds'] },
+  { id: 6, title: 'Walking on the Beach', matchPercentage: 96, image_url: 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=800&q=80', isLiked: false, tags: ['Sunset', 'Beach', 'Reflection', 'People'] },
+  { id: 7, title: 'Ocean Waves at Dusk', matchPercentage: 94, image_url: 'https://images.unsplash.com/photo-1473496169904-658ba98b5840?w=800&q=80', isLiked: false, tags: ['Sunset', 'Beach', 'Clouds', 'Sky'] },
+  { id: 8, title: 'Golden Hour Pier', matchPercentage: 93, image_url: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80', isLiked: false, tags: ['Sunset', 'Beach', 'Palm Trees', 'Golden Hour'] },
 ]
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const q = searchParams.get('q') || ''
-  const [photos, setPhotos] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [totalResults, setTotalResults] = useState(0)
-  const [sort, setSort] = useState('-createdAt')
-
-  const doSearch = useCallback(async (query, sortBy) => {
-    if (!query.trim()) return
-    setLoading(true)
-    try {
-      const res = await photoService.search(query, { sort: sortBy, limit: 40 })
-      // Only show published photos in search
-      const results = (res.photos || res.data || []).filter(p => p.publish_status === 'published')
-
-      if (results.length > 0) {
-        setPhotos(results)
-        setTotalResults(res.total || results.length)
-      } else {
-        setPhotos([])
-        setTotalResults(0)
-      }
-
-    } catch {
-      setPhotos([])
-      setTotalResults(0)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (q) doSearch(q, sort)
-    else { setPhotos([]); setTotalResults(0) }
-  }, [q, sort, doSearch])
-
+  const q = searchParams.get('q') || 'Sunset photos at the beach with people walking and golden sky'
+  const [photos, setPhotos] = useState(mockSearchPhotos) // Use mock for this UI preview
+  
   const handleSearch = (newQ) => setSearchParams({ q: newQ })
 
   return (
-    <div className="fade-in" style={{ padding: '3rem 1rem', paddingBottom: '5rem' }}>
-      <div className="container" style={{ maxWidth: '1400px' }}>
-
-        {/* ── Header ── */}
-        <div style={{ marginBottom: '3rem', textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 1rem', background: 'rgba(184, 115, 51, 0.08)', borderRadius: 999, color: 'var(--color-accent)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '1.5rem' }}>
-            <Sparkles size={14} />
-            AI-Powered Search
-          </div>
-
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '1rem', letterSpacing: '-0.5px' }}>
-            {q ? (
-              <>Results for "<span style={{ color: 'var(--color-accent)' }}>{q}</span>"</>
-            ) : (
-              'Search Gallery'
-            )}
-          </h1>
-
-          {q && (
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '1.05rem', marginBottom: '2rem' }}>
-              {loading
-                ? 'Searching the vault...'
-                : `Found ${totalResults} photo${totalResults !== 1 ? 's' : ''} matching your query`}
-            </p>
-          )}
-
-          <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-            <SearchBar initialValue={q} onSearch={handleSearch} size="large" />
-          </div>
-        </div>
-
-        {/* ── Quick suggestions (shown when no query) ── */}
-        {!q && (
-          <div style={{ marginBottom: '4rem', textAlign: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              <TrendingUp size={16} color="var(--color-accent)" />
-              <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Trending Searches
-              </span>
+    <div className="fade-in page-section">
+      <div className="container" style={{ maxWidth: '1600px' }}>
+        
+        <div className="page-with-sidebar">
+          {/* Main Content */}
+          <div className="main-content-area">
+            {/* Header */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h1 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                AI Search
+                <Sparkles size={24} color="var(--color-highlight)" />
+              </h1>
+              <p className="section-subtitle">Describe what you're looking for in natural language. AI will find it for you.</p>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center', maxWidth: '800px', margin: '0 auto' }}>
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => handleSearch(s)}
-                  style={{ cursor: 'pointer', border: '1px solid var(--color-border)', fontSize: '0.9rem', padding: '0.5rem 1.25rem', borderRadius: '999px', background: '#FFFFFF', color: 'var(--color-text-primary)', transition: 'all 0.2s ease' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--color-accent)'
-                    e.currentTarget.style.color = 'var(--color-accent)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--color-border)'
-                    e.currentTarget.style.color = 'var(--color-text-primary)'
-                  }}
-                >
+
+            {/* Huge Search Input */}
+            <div style={{ marginBottom: '2rem' }}>
+              <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center', background: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: '16px', padding: '0.5rem', boxShadow: 'var(--shadow-soft)' }}>
+                <div style={{ padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRight: '1px solid var(--color-border)' }}>
+                   <Monitor size={18} color="var(--color-text-muted)" />
+                   <Sparkles size={18} color="var(--color-text-muted)" />
+                </div>
+                <input 
+                  type="text"
+                  defaultValue={q}
+                  style={{ flex: 1, padding: '1rem', border: 'none', outline: 'none', fontSize: '1rem', color: 'var(--color-text-primary)' }}
+                />
+                <button style={{ width: 48, height: 48, background: 'var(--color-accent)', borderRadius: '50%', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', flexShrink: 0, marginRight: '0.5rem' }}>
+                  &gt;
+                </button>
+              </div>
+            </div>
+
+            {/* Suggestions */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '3rem' }}>
+              <span style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>Try these examples:</span>
+              {SUGGESTIONS.map(s => (
+                <button key={s} className="tag" onClick={() => handleSearch(s)} style={{ border: 'none', background: 'var(--color-bg-card)', boxShadow: 'var(--shadow-soft)' }}>
                   {s}
                 </button>
               ))}
+              <button className="btn btn-secondary btn-sm" style={{ padding: '0.4rem' }}>
+                 <Sparkles size={16} />
+              </button>
             </div>
-          </div>
-        )}
 
-        {/* ── Filter / sort bar ── */}
-        {q && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem' }}>
-            {/* Active query chip */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: '#FFFFFF', border: '1px solid var(--color-border)', borderRadius: '999px', color: 'var(--color-text-primary)', fontSize: '0.9rem', fontWeight: 500, boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
-                <Search size={14} color="var(--color-text-muted)" />
-                {q}
-                <button
-                  onClick={() => setSearchParams({})}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: 0, marginLeft: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <X size={14} />
+            {/* Results Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Search Results</h2>
+                <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>342 results found</span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <button className="btn btn-secondary btn-sm" style={{ gap: '0.5rem' }}>
+                  <Heart size={14} /> Save Search
                 </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Sort by:</span>
+                  <select style={{ border: 'none', background: 'transparent', fontWeight: 600, color: 'var(--color-text-primary)', outline: 'none', cursor: 'pointer' }}>
+                    <option>Relevance</option>
+                    <option>Newest</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '0.25rem' }}>
+                  <button style={{ background: 'var(--color-accent)', color: '#FFF', border: 'none', borderRadius: '8px', padding: '0.4rem', cursor: 'pointer' }}>
+                    <LayoutGrid size={16} />
+                  </button>
+                  <button style={{ background: 'transparent', color: 'var(--color-text-secondary)', border: 'none', borderRadius: '8px', padding: '0.4rem', cursor: 'pointer' }}>
+                    <List size={16} />
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Sort dropdown */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <label style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}>Sort By:</label>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.9rem', cursor: 'pointer', border: '1px solid var(--color-border)', borderRadius: '8px', background: '#FFFFFF', outline: 'none', color: 'var(--color-text-primary)' }}
-              >
-                {SORT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
+            {/* Grid */}
+            <div className="photo-grid">
+              {photos.map(photo => (
+                <PhotoCard key={photo.id} photo={photo} />
+              ))}
+            </div>
+
+            {/* Pagination Placeholder */}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '3rem' }}>
+              <button className="btn btn-secondary btn-sm" style={{ padding: '0.5rem' }}>&lt;</button>
+              <button className="btn btn-primary btn-sm" style={{ padding: '0.5rem 1rem' }}>1</button>
+              <button className="btn btn-ghost btn-sm" style={{ padding: '0.5rem 1rem' }}>2</button>
+              <button className="btn btn-ghost btn-sm" style={{ padding: '0.5rem 1rem' }}>3</button>
+              <span style={{ color: 'var(--color-text-secondary)' }}>...</span>
+              <button className="btn btn-ghost btn-sm" style={{ padding: '0.5rem 1rem' }}>18</button>
+              <button className="btn btn-secondary btn-sm" style={{ padding: '0.5rem' }}>&gt;</button>
             </div>
           </div>
-        )}
 
-        {/* ── Results grid ── */}
-        {q ? (
-          <>
-            <PhotoGrid photos={photos} loading={loading} />
-
-            {!loading && photos.length === 0 && (
-              <div className="empty-state" style={{ marginTop: '4rem' }}>
-                <div className="empty-state-icon">
-                  <Search size={40} />
-                </div>
-                <h3 style={{ fontSize: '1.5rem', color: 'var(--color-text-primary)', marginBottom: '0.5rem' }}>
-                  No results found
-                </h3>
-                <p style={{ color: 'var(--color-text-secondary)', marginBottom: '2rem' }}>
-                  We couldn't find anything matching "{q}". Try a different keyword or explore popular tags.
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center', marginBottom: '2rem' }}>
-                  {SUGGESTIONS.slice(0, 6).map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => handleSearch(s)}
-                      className="tag"
-                      style={{ cursor: 'pointer', border: 'none' }}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-                <Link to="/" className="btn btn-secondary">
-                  Browse Gallery
-                </Link>
+          {/* Right Sidebar */}
+          <div className="right-sidebar">
+            
+            {/* AI Suggestions */}
+            <div className="sidebar-block" style={{ background: 'rgba(221, 184, 146, 0.05)', borderColor: 'rgba(221, 184, 146, 0.2)' }}>
+              <div className="sidebar-block-title">
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Sparkles size={16} color="var(--color-highlight)" /> AI Suggestions</span>
               </div>
-            )}
-          </>
-        ) : (
-          /* ── Empty state (no query yet) ── */
-          <div className="empty-state" style={{ background: 'transparent', border: 'none' }}>
-            <div className="empty-state-icon" style={{ background: '#FFFFFF' }}>
-              <Search size={40} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                  <div style={{ color: 'var(--color-secondary-accent)', marginTop: '2px' }}><Sparkles size={14} /></div>
+                  <div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--color-text-primary)' }}>Find photos taken at beaches during sunset</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>428 photos</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                  <div style={{ color: 'var(--color-secondary-accent)', marginTop: '2px' }}><Sparkles size={14} /></div>
+                  <div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--color-text-primary)' }}>Show me pictures with golden hour lighting</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>1,248 photos</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                  <div style={{ color: 'var(--color-secondary-accent)', marginTop: '2px' }}><Sparkles size={14} /></div>
+                  <div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--color-text-primary)' }}>Photos with people walking or silhouette</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>842 photos</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                  <div style={{ color: 'var(--color-secondary-accent)', marginTop: '2px' }}><Sparkles size={14} /></div>
+                  <div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--color-text-primary)' }}>Best sunset photos in my collection</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>512 photos</div>
+                  </div>
+                </div>
+              </div>
+              <button className="btn btn-ghost" style={{ width: '100%', marginTop: '1rem', color: 'var(--color-secondary-accent)' }}>
+                <Sparkles size={14} /> View More Suggestions
+              </button>
             </div>
-            <h2 style={{ fontSize: '1.5rem', color: 'var(--color-text-primary)', marginBottom: '0.75rem' }}>
-              Discover inspiration
-            </h2>
-            <p style={{ color: 'var(--color-text-secondary)', maxWidth: 500, lineHeight: 1.7, margin: '0 auto' }}>
-              Search by visual objects, semantic descriptions, photography styles, or tags. Our AI understands what's inside the photos.
-            </p>
+
+            {/* Refine Search Filters */}
+            <div className="sidebar-block">
+              <div className="sidebar-block-title">
+                Refine Search
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', cursor: 'pointer', fontWeight: 600 }}>Clear All</span>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1rem' }}>
+                <div>
+                  <label className="input-label">Media Type</label>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button className="btn btn-sm" style={{ background: 'var(--color-accent)', color: '#FFF' }}>All</button>
+                    <button className="btn btn-secondary btn-sm">Photos</button>
+                    <button className="btn btn-secondary btn-sm">Videos</button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="input-label">Date Taken</label>
+                  <div className="input-field" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1rem' }}>
+                    <Calendar size={16} color="var(--color-text-muted)" />
+                    <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>Select Date Range</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="input-label">Location</label>
+                  <div className="input-field" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1rem' }}>
+                    <MapPin size={16} color="var(--color-text-muted)" />
+                    <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>All Locations</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="input-label">Tags</label>
+                  <div className="input-field" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1rem' }}>
+                    <Tag size={16} color="var(--color-text-muted)" />
+                    <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>Select Tags</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="input-label">Colors</label>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                    {['#FF3B30', '#FF9500', '#FFCC00', '#4CD964', '#5AC8FA', '#007AFF', '#5856D6', '#000000'].map(color => (
+                      <div key={color} style={{ width: 24, height: 24, borderRadius: '50%', background: color, cursor: 'pointer', border: '1px solid rgba(0,0,0,0.1)' }}></div>
+                    ))}
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#FFFFFF', cursor: 'pointer', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: '12px' }}>+</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="input-label">Orientation</label>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <button className="btn btn-secondary btn-sm" style={{ padding: '0.5rem', flex: 1 }}><Maximize size={16} /></button>
+                    <button className="btn btn-secondary btn-sm" style={{ padding: '0.5rem', flex: 1 }}><Smartphone size={16} /></button>
+                    <button className="btn btn-secondary btn-sm" style={{ padding: '0.5rem', flex: 1 }}><Monitor size={16} /></button>
+                  </div>
+                </div>
+              </div>
+
+              <button className="btn btn-primary" style={{ width: '100%', marginTop: '2rem' }}>
+                Apply Filters
+              </button>
+            </div>
+
           </div>
-        )}
+        </div>
+
       </div>
     </div>
   )

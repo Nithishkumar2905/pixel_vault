@@ -11,6 +11,8 @@ import ProfilePage from './pages/ProfilePage'
 import SearchPage from './pages/SearchPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import SettingsPage from './pages/SettingsPage'
+import FavoritesPage from './pages/FavoritesPage'
+import AlbumsPage from './pages/AlbumsPage'
 
 export default function App() {
   return (
@@ -23,6 +25,22 @@ export default function App() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/photos/:id" element={<PhotoViewPage />} />
           <Route path="/profile/:userId" element={<ProfilePage />} />
+          <Route
+            path="/favorites"
+            element={
+              <ProtectedRoute>
+                <FavoritesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/albums"
+            element={
+              <ProtectedRoute>
+                <AlbumsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/upload"
             element={

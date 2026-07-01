@@ -30,16 +30,37 @@ export default function Sidebar() {
     toast(`✨ ${featureName} is coming soon!`, { icon: '🚧' })
   }
 
-  const navItems = [
-    { to: '/workspace', icon: <Home size={20} />, label: 'Dashboard', auth: true },
-    { to: '#workspace-folder', icon: <FolderOpen size={20} />, label: 'My Workspace', auth: true, onClick: (e) => handleComingSoon(e, 'My Workspace Folder') },
-    { to: '/upload', icon: <UploadCloud size={20} />, label: 'Upload', auth: true, badge: '20+' },
-    { to: '/search', icon: <Search size={20} />, label: 'AI Search', auth: false },
-    { to: '#albums', icon: <ImageIcon size={20} />, label: 'AI Albums', auth: true, onClick: (e) => handleComingSoon(e, 'AI Albums') },
-    { to: '/', icon: <LayoutGrid size={20} />, label: 'Public Gallery', auth: false },
-    { to: '#favorites', icon: <Heart size={20} />, label: 'Favorites', auth: true, onClick: (e) => handleComingSoon(e, 'Favorites') },
-    { to: user ? `/profile/${user.id}` : '/login', icon: <User size={20} />, label: 'Profile', auth: false },
-    { to: '/settings', icon: <Settings size={20} />, label: 'Settings', auth: true },
+  const navGroups = [
+    {
+      title: '🏠 Home',
+      items: [
+        { to: '/workspace', icon: <Home size={20} />, label: 'Dashboard', auth: true },
+        { to: '#workspace-folder', icon: <FolderOpen size={20} />, label: 'My Workspace', auth: true, onClick: (e) => handleComingSoon(e, 'My Workspace') },
+        { to: '/upload', icon: <UploadCloud size={20} />, label: 'Upload', auth: true, badge: '20+' },
+      ]
+    },
+    {
+      title: '📸 Library',
+      items: [
+        { to: '/search', icon: <Search size={20} />, label: 'AI Search', auth: false },
+        { to: '/albums', icon: <ImageIcon size={20} />, label: 'AI Albums', auth: true },
+        { to: '/favorites', icon: <Heart size={20} />, label: 'Favorites', auth: true },
+      ]
+    },
+    {
+      title: '🌍 Community',
+      items: [
+        { to: '/', icon: <LayoutGrid size={20} />, label: 'Public Gallery', auth: false },
+      ]
+    },
+    {
+      title: '⚙ Account',
+      items: [
+        { to: user ? `/profile/${user.id}` : '/login', icon: <User size={20} />, label: 'Profile', auth: false },
+        { to: '/settings', icon: <Settings size={20} />, label: 'Settings', auth: true },
+        { to: '#logout', icon: <LogOut size={20} />, label: 'Logout', auth: true, onClick: (e) => { e.preventDefault(); handleLogout(); } },
+      ]
+    }
   ]
 
   return (
@@ -93,24 +114,45 @@ export default function Sidebar() {
       </Link>
 
       {/* Main Navigation */}
-      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-        {navItems.filter(item => !item.auth || user).map((item, idx) => (
-          <NavLink
-            key={idx}
-            to={item.to}
-            onClick={item.onClick}
-            className={({ isActive }) => `sidebar-link ${isActive && !item.onClick ? 'active' : ''}`}
-            end={item.to === '/'}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {item.icon}
-              <span>{item.label}</span>
+      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        {navGroups.map((group, groupIdx) => {
+          const visibleItems = group.items.filter(item => !item.auth || user);
+          if (visibleItems.length === 0) return null;
+          
+          return (
+            <div key={groupIdx} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <div style={{
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                color: 'var(--color-text-secondary)',
+                paddingLeft: '1rem',
+                marginBottom: '0.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                {group.title}
+              </div>
+              {visibleItems.map((item, idx) => (
+                <NavLink
+                  key={idx}
+                  to={item.to}
+                  onClick={item.onClick}
+                  className={({ isActive }) => `sidebar-link ${isActive && !item.onClick && item.to !== '#logout' ? 'active' : ''}`}
+                  end={item.to === '/'}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge && (
+                    <span className="sidebar-badge">{item.badge}</span>
+                  )}
+                </NavLink>
+              ))}
             </div>
-            {item.badge && (
-              <span className="sidebar-badge">{item.badge}</span>
-            )}
-          </NavLink>
-        ))}
+          );
+        })}
       </nav>
 
       {/* Storage Indicator */}
@@ -134,7 +176,7 @@ export default function Sidebar() {
 
       {/* Bottom Profile Info */}
       {user && (
-        <div style={{ 
+        <Link to={`/profile/${user.id}`} style={{ 
           marginTop: '1.5rem', 
           display: 'flex', 
           alignItems: 'center', 
@@ -143,8 +185,9 @@ export default function Sidebar() {
           background: 'var(--color-bg-card)',
           borderRadius: '16px',
           border: '1px solid var(--color-border)',
+          textDecoration: 'none',
           cursor: 'pointer'
-        }} onClick={handleLogout}>
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div className="avatar-placeholder" style={{ width: 36, height: 36 }}>
               {user.email?.[0]?.toUpperCase() || 'U'}
@@ -154,8 +197,7 @@ export default function Sidebar() {
               <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Photographer</span>
             </div>
           </div>
-          <ChevronDown size={16} color="var(--color-text-secondary)" />
-        </div>
+        </Link>
       )}
 
       <style>{`
