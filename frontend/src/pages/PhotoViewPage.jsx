@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Heart, Download, ArrowLeft, User, Calendar, Eye, Share2, Tag, Sparkles, Trash2, Edit3, Image as ImageIcon, Hash } from 'lucide-react'
+import { Heart, Download, ArrowLeft, User, Calendar, Eye, Share2, Tag, Sparkles, Trash2, Edit3, Image as ImageIcon, Hash, MapPin } from 'lucide-react'
 import photoService from '../services/photoService'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
+import ConfirmModal from '../components/ConfirmModal'
+import EXIFMiniMap from '../components/EXIFMiniMap'
 
 export default function PhotoViewPage() {
   const { id } = useParams()
@@ -17,6 +19,7 @@ export default function PhotoViewPage() {
   const [likeCount, setLikeCount] = useState(0)
   const [liking, setLiking] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -92,7 +95,6 @@ export default function PhotoViewPage() {
   }
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this photo forever?')) return
     setDeleting(true)
     try {
       await photoService.delete(id)
@@ -233,7 +235,7 @@ export default function PhotoViewPage() {
                   <button onClick={() => setEditing(true)} className="btn btn-secondary btn-sm" style={{ padding: '0.5rem 1rem', borderRadius: '999px' }}>
                     <Edit3 size={14} style={{ marginRight: '0.25rem' }} /> Edit
                   </button>
-                  <button onClick={handleDelete} className="btn btn-sm" style={{ padding: '0.5rem 1rem', borderRadius: '999px', background: 'rgba(211,93,93,0.1)', color: 'var(--color-error)' }} disabled={deleting}>
+                  <button onClick={() => setConfirmDeleteOpen(true)} className="btn btn-sm" style={{ padding: '0.5rem 1rem', borderRadius: '999px', background: 'rgba(211,93,93,0.1)', color: 'var(--color-error)' }} disabled={deleting}>
                     <Trash2 size={14} style={{ marginRight: '0.25rem' }} /> Delete
                   </button>
                 </div>
@@ -302,6 +304,20 @@ export default function PhotoViewPage() {
               </div>
             </div>
 
+            {/* Geotagged Location EXIF MiniMap */}
+            <div className="glass-card" style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                <MapPin size={18} color="var(--color-accent)" />
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Location & EXIF Map</h3>
+              </div>
+              <EXIFMiniMap
+                latitude={photo.latitude || 48.8584}
+                longitude={photo.longitude || 2.2945}
+                locationName={photo.location || photo.location_name || 'Geotagged Location (Paris)'}
+                height="200px"
+              />
+            </div>
+
           </div>
         </div>
 
@@ -312,6 +328,16 @@ export default function PhotoViewPage() {
           }
         `}</style>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmDeleteOpen}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDeleteOpen(false)}
+        title="Delete this photo forever?"
+        message="This photo will be permanently removed from PixelVault and cannot be recovered."
+        confirmLabel="Delete Forever"
+        isDanger
+      />
     </div>
   )
 }

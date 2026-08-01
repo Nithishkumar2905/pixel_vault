@@ -1,19 +1,26 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Heart, Eye, Download, User, Trash2, Globe, Lock } from 'lucide-react'
+import { Heart, Eye, Download, User, Trash2, Globe, Lock, Maximize2 } from 'lucide-react'
 import photoService from '../services/photoService'
 import { useAuth } from '../context/AuthContext'
+import { useLightbox } from '../context/LightboxContext'
 import toast from 'react-hot-toast'
+import ConfirmModal from './ConfirmModal'
 
-export default function PhotoCard({ photo, index = 0, onDelete }) {
+// Reliable inline SVG placeholder — no external service needed
+const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'%3E%3Crect fill='%23F4F1E9' width='600' height='400'/%3E%3Cg fill='%23C8C2B6'%3E%3Crect x='250' y='150' width='100' height='70' rx='8'/%3E%3Ccircle cx='275' cy='140' r='18'/%3E%3Cpolygon points='240,220 290,165 330,200 360,175 400,220'/%3E%3C/g%3E%3C/svg%3E`
+
+export default function PhotoCard({ photo, index = 0, onDelete, allPhotos }) {
   const { user } = useAuth()
+  const { openLightbox } = useLightbox()
   const navigate = useNavigate()
   const [liked, setLiked] = useState(photo.isLiked || false)
-  const [likeCount, setLikeCount] = useState(photo.likeCount ?? 0)
+  const [likeCount, setLikeCount] = useState(photo.likeCount ?? photo.likes_count ?? 0)
   const [liking, setLiking] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [publishStatus, setPublishStatus] = useState(photo.publish_status || 'private')
   const [publishing, setPublishing] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const imgSrc = photo.image_url || photo.imageUrl
   const isOwner = user && (photo.user_id === user.id)
@@ -21,9 +28,11 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
   const handleDelete = async (e) => {
     e.preventDefault()
     e.stopPropagation()
+    setConfirmOpen(true)
+  }
 
-    if (!window.confirm('Are you sure you want to delete this photo?')) return
-
+  const confirmDelete = async () => {
+    setConfirmOpen(false)
     setDeleting(true)
     try {
       await photoService.delete(photo.id)
@@ -109,8 +118,12 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
     <div
       className="photo-card photo-grid-item"
       id={`photo-card-${photo.id || index}`}
-      onClick={() => photo.id && navigate(`/photos/${photo.id}`)}
-      style={{ cursor: photo.id ? 'pointer' : 'default', opacity: deleting ? 0.5 : 1 }}
+      onClick={() => {
+        const photoList = allPhotos && allPhotos.length > 0 ? allPhotos : [photo]
+        const idx = allPhotos && allPhotos.length > 0 ? allPhotos.findIndex((p) => p.id === photo.id) : 0
+        openLightbox(photoList, idx >= 0 ? idx : 0)
+      }}
+      style={{ cursor: 'pointer', opacity: deleting ? 0.5 : 1 }}
     >
       {photo.matchPercentage && (
         <div className="album-card-badge" style={{ top: '0.75rem', left: '0.75rem', background: 'rgba(0,0,0,0.6)' }}>
@@ -122,7 +135,7 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
         alt={photo.title || photo.altText || 'Photo'}
         style={{ transform: 'translateZ(0)' }}
         onError={(e) => {
-          e.target.src = 'https://via.placeholder.com/600x400?text=Image+Not+Found'
+          e.target.src = PLACEHOLDER_SVG
         }}
       />
 
@@ -160,12 +173,28 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
             {likeCount > 0 && <span className="numbers">{likeCount}</span>}
           </button>
 
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              const photoList = allPhotos && allPhotos.length > 0 ? allPhotos : [photo]
+              const idx = allPhotos && allPhotos.length > 0 ? allPhotos.findIndex((p) => p.id === photo.id) : 0
+              openLightbox(photoList, idx >= 0 ? idx : 0)
+            }}
+            className="btn btn-secondary btn-sm"
+            style={{ gap: '0.3rem', padding: '0.4rem 0.6rem' }}
+            title="Open Lightbox (Fullscreen)"
+            aria-label="Expand Lightbox"
+          >
+            <Maximize2 size={14} />
+          </button>
+
           {photo.id && (
             <Link
               to={`/photos/${photo.id}`}
               onClick={(e) => e.stopPropagation()}
               className="btn btn-secondary btn-sm"
               style={{ gap: '0.3rem', padding: '0.4rem 0.6rem' }}
+              title="View Photo Details Page"
             >
               <Eye size={14} />
             </Link>
@@ -213,6 +242,16 @@ export default function PhotoCard({ photo, index = 0, onDelete }) {
           {photo.tags.length > 1 && <span className="hide-on-mobile">, {photo.tags[1]}</span>}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmOpen}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+        title="Delete this photo?"
+        message="This photo will be permanently removed from PixelVault. This action cannot be undone."
+        confirmLabel="Delete Photo"
+        isDanger
+      />
     </div>
   )
 }

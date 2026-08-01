@@ -96,7 +96,7 @@ export default function FavoritesPage() {
             ) : favorites.length > 0 ? (
               <div className="photo-grid">
                 {favorites.map(photo => (
-                  <PhotoCard key={photo.id} photo={photo} />
+                  <PhotoCard key={photo.id} photo={photo} allPhotos={favorites} />
                 ))}
               </div>
             ) : (

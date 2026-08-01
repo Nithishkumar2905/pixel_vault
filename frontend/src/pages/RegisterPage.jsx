@@ -55,12 +55,24 @@ export default function RegisterPage() {
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
     setLoading(true)
+    setErrors({})
     try {
-      await register({ ...form, email: form.email.trim(), username: form.username.trim() })
-      toast.success('Account created! Welcome to PixelVault 🎉')
-      navigate('/')
+      const res = await register({ ...form, email: form.email.trim(), username: form.username.trim() })
+      if (res?.session) {
+        toast.success('Account created! Welcome to PixelVault 🎉')
+        navigate('/workspace')
+      } else if (res?.user) {
+        toast.success('Account created! Please check your email to confirm your account, then sign in.', { duration: 6000 })
+        navigate('/login')
+      } else {
+        toast.success('Account registered! Please sign in.')
+        navigate('/login')
+      }
     } catch (err) {
-      toast.error(err.message || 'Registration failed')
+      console.error('Registration error:', err)
+      const msg = err.message || 'Registration failed. Please check your credentials.'
+      setErrors({ global: msg })
+      toast.error(msg)
     } finally {
       setLoading(false)
     }
@@ -89,7 +101,7 @@ export default function RegisterPage() {
           width: 600,
           height: 600,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(107,112,92,0.07) 0%, transparent 70%)',
           top: '-10%',
           right: '10%',
           pointerEvents: 'none',
@@ -104,23 +116,39 @@ export default function RegisterPage() {
               width: 56,
               height: 56,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #6366F1, #F59E0B)',
+              background: 'linear-gradient(135deg, #6B705C, #A98467)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 1rem',
-              boxShadow: '0 8px 24px rgba(99,102,241,0.35)',
+              boxShadow: '0 8px 24px rgba(107, 112, 92, 0.35)',
             }}
           >
             <Camera size={24} style={{ color: '#FFFFFF' }} />
           </div>
-          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.75rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '0.5rem' }}>
+          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '0.5rem' }}>
             Create your account
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '0.9rem' }}>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
             Join thousands of photographers on PixelVault
           </p>
         </div>
+
+        {errors.global && (
+          <div style={{
+            background: 'rgba(188, 71, 73, 0.1)',
+            border: '1px solid rgba(188, 71, 73, 0.3)',
+            color: 'var(--color-error)',
+            padding: '0.85rem 1rem',
+            borderRadius: '12px',
+            fontSize: '0.88rem',
+            fontWeight: 500,
+            marginBottom: '1.25rem',
+            textAlign: 'center',
+          }}>
+            ⚠️ {errors.global}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} id="register-form" noValidate style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
@@ -129,7 +157,7 @@ export default function RegisterPage() {
             <div className="input-group" style={{ marginBottom: 0 }}>
               <label className="input-label" htmlFor="reg-name">
                 <User size={13} style={{ display: 'inline', marginRight: '0.25rem' }} />
-                Full Name <span style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 400 }}>(optional)</span>
+                Full Name <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', fontWeight: 400 }}>(optional)</span>
               </label>
               <input
                 id="reg-name"
@@ -212,7 +240,7 @@ export default function RegisterPage() {
             {form.password && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem' }}>
                 {REQUIREMENTS.map((req) => (
-                  <div key={req.label} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: req.test(form.password) ? '#10B981' : '#474769' }}>
+                  <div key={req.label} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: req.test(form.password) ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
                     <Check size={11} />
                     {req.label}
                   </div>
@@ -239,13 +267,13 @@ export default function RegisterPage() {
             {errors.confirmPassword && <p className="input-error">{errors.confirmPassword}</p>}
           </div>
 
-          <div style={{ height: 1, background: '#1E293B', margin: '0.5rem 0' }} />
+          <div style={{ height: 1, background: 'var(--color-border)', margin: '0.5rem 0' }} />
 
           {/* Bio */}
           <div className="input-group" style={{ marginBottom: 0 }}>
             <label className="input-label" htmlFor="reg-bio">
               <FileText size={13} style={{ display: 'inline', marginRight: '0.25rem' }} />
-              Bio <span style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 400 }}>(optional)</span>
+              Bio <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', fontWeight: 400 }}>(optional)</span>
             </label>
             <textarea
               id="reg-bio"
@@ -264,7 +292,7 @@ export default function RegisterPage() {
             <div className="input-group" style={{ marginBottom: 0 }}>
               <label className="input-label" htmlFor="reg-loc">
                 <MapPin size={13} style={{ display: 'inline', marginRight: '0.25rem' }} />
-                Location <span style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 400 }}>(optional)</span>
+                Location <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', fontWeight: 400 }}>(optional)</span>
               </label>
               <input
                 id="reg-loc"
@@ -280,7 +308,7 @@ export default function RegisterPage() {
             <div className="input-group" style={{ marginBottom: 0 }}>
               <label className="input-label" htmlFor="reg-portfolio">
                 <Globe size={13} style={{ display: 'inline', marginRight: '0.25rem' }} />
-                Portfolio Link <span style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 400 }}>(optional)</span>
+                Portfolio Link <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', fontWeight: 400 }}>(optional)</span>
               </label>
               <input
                 id="reg-portfolio"
@@ -309,9 +337,9 @@ export default function RegisterPage() {
         </form>
 
         <div style={{ display: 'flex', alignItems: 'center', margin: '1.5rem 0' }}>
-          <div style={{ flex: 1, height: 1, background: '#1E293B' }} />
-          <span style={{ padding: '0 1rem', color: '#64748B', fontSize: '0.85rem' }}>or</span>
-          <div style={{ flex: 1, height: 1, background: '#1E293B' }} />
+          <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
+          <span style={{ padding: '0 1rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>or</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
         </div>
 
         <button
@@ -327,7 +355,7 @@ export default function RegisterPage() {
           }}
           className="btn btn-secondary"
           disabled={loading || googleLoading}
-          style={{ width: '100%', padding: '0.875rem', fontSize: '0.95rem', background: '#0F172A', color: '#F8FAFC', border: '1px solid #1E293B', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}
+          style={{ width: '100%', padding: '0.875rem', fontSize: '0.95rem', background: '#FFFFFF', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)', display: 'flex', justifyContent: 'center', gap: '0.5rem', borderRadius: '14px', boxShadow: 'var(--shadow-soft)', transition: 'var(--transition-smooth)' }}
         >
           {googleLoading ? (
             <><div className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> Connecting to Google…</>
@@ -341,9 +369,9 @@ export default function RegisterPage() {
 
         <hr className="divider" style={{ marginTop: '2rem' }} />
 
-        <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: '0.875rem' }}>
+        <p style={{ textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
           Already have an account?{' '}
-          <Link to="/login" style={{ color: '#A5B4FC', fontWeight: 600, textDecoration: 'none' }} id="goto-login-link">
+          <Link to="/login" style={{ color: 'var(--color-accent)', fontWeight: 600, textDecoration: 'none' }} id="goto-login-link">
             Sign in
           </Link>
         </p>

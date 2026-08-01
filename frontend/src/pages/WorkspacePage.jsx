@@ -4,12 +4,14 @@ import { LayoutDashboard, Image as ImageIcon, Eye, Lock, RefreshCw, Trash2, Edit
 import { useAuth } from '../context/AuthContext'
 import photoService from '../services/photoService'
 import toast from 'react-hot-toast'
+import ConfirmModal from '../components/ConfirmModal'
 
 export default function WorkspacePage() {
   const { user } = useAuth()
   const [photos, setPhotos] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState('all') // 'all', 'drafts', 'published', 'favorites'
+  const [confirmId, setConfirmId] = useState(null) // id of photo pending deletion
 
   const loadPhotos = async () => {
     try {
@@ -39,7 +41,12 @@ export default function WorkspacePage() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this photo?')) return
+    setConfirmId(id)
+  }
+
+  const confirmDelete = async () => {
+    const id = confirmId
+    setConfirmId(null)
     try {
       await photoService.delete(id)
       toast.success('Photo deleted')
@@ -256,6 +263,16 @@ export default function WorkspacePage() {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmId}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmId(null)}
+        title="Delete this photo?"
+        message="This photo will be permanently removed from your workspace. This action cannot be undone."
+        confirmLabel="Delete Photo"
+        isDanger
+      />
     </div>
   )
 }

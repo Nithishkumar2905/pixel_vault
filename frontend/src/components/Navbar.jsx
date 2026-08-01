@@ -107,22 +107,18 @@ export default function Navbar({ isSidebarExpanded, setIsSidebarExpanded }) {
         </button>
         <button onClick={handleComingSoon} className="icon-btn" style={{ position: 'relative' }} aria-label="Notifications">
           <Bell size={20} />
-          <span style={{ 
-            position: 'absolute', 
-            top: '4px', 
-            right: '4px', 
-            width: '16px', 
-            height: '16px', 
-            background: 'var(--color-error)', 
-            borderRadius: '50%',
-            border: '2px solid #FFFFFF',
-            color: '#FFFFFF',
-            fontSize: '0.6rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 700
-          }}>3</span>
+          {user && (
+            <span style={{ 
+              position: 'absolute', 
+              top: '6px', 
+              right: '6px', 
+              width: '8px', 
+              height: '8px', 
+              background: 'var(--color-error)', 
+              borderRadius: '50%',
+              border: '2px solid rgba(247, 244, 239, 0.95)',
+            }} />
+          )}
         </button>
 
         <div style={{ width: '1px', height: '24px', background: 'var(--color-border)', margin: '0 0.5rem' }}></div>
@@ -130,7 +126,9 @@ export default function Navbar({ isSidebarExpanded, setIsSidebarExpanded }) {
         {user ? (
           <Link to={`/profile/${user.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>Nithish Kumar</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                {user?.user_metadata?.full_name || user?.user_metadata?.name || user?.user_metadata?.username || user?.email?.split('@')[0] || 'User'}
+              </span>
               <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Photographer</span>
             </div>
             {user?.user_metadata?.avatar_url ? (
@@ -152,7 +150,7 @@ export default function Navbar({ isSidebarExpanded, setIsSidebarExpanded }) {
                 fontWeight: 600,
                 fontSize: '1.1rem'
               }}>
-                {(user?.email?.[0] || 'U').toUpperCase()}
+                {(user?.user_metadata?.full_name?.[0] || user?.user_metadata?.username?.[0] || user?.email?.[0] || 'U').toUpperCase()}
               </div>
             )}
           </Link>

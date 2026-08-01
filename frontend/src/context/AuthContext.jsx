@@ -57,6 +57,23 @@ export const AuthProvider = ({ children }) => {
     })
     if (error) throw error
 
+    // Best-effort profile record insertion into public.users
+    if (data?.user) {
+      try {
+        await supabase.from('users').upsert({
+          id: data.user.id,
+          email: email,
+          username: username,
+          name: name || username,
+          bio: bio || null,
+          location: location || null,
+          portfolio_link: portfolio_link || null,
+        })
+      } catch (dbErr) {
+        console.warn('Profile table sync info:', dbErr)
+      }
+    }
+
     return data
   }, [])
 

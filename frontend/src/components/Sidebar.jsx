@@ -11,7 +11,8 @@ import {
   LogOut,
   FolderOpen,
   LayoutGrid,
-  ChevronDown
+  ChevronDown,
+  MapPin
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
@@ -45,6 +46,7 @@ export default function Sidebar({ isExpanded, setIsExpanded }) {
       shortTitle: '📸',
       items: [
         { to: '/search', icon: <Search size={20} />, label: 'AI Search', auth: false },
+        { to: '/places', icon: <MapPin size={20} />, label: 'EXIF Map', auth: false },
         { to: '/albums', icon: <ImageIcon size={20} />, label: 'AI Albums', auth: true },
         { to: '/favorites', icon: <Heart size={20} />, label: 'Favorites', auth: true },
       ]
@@ -217,8 +219,12 @@ export default function Sidebar({ isExpanded, setIsExpanded }) {
             </div>
             {isExpanded && (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)', lineHeight: 1.2 }}>Nithish Kumar</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Photographer</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)', lineHeight: 1.2 }}>
+                  {user?.user_metadata?.full_name || user?.user_metadata?.name || user?.user_metadata?.username || user?.email?.split('@')[0] || 'User'}
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                  @{user?.user_metadata?.username || user?.email?.split('@')[0] || 'user'}
+                </span>
               </div>
             )}
           </div>

@@ -76,7 +76,7 @@ export default function LoginPage() {
           width: 500,
           height: 500,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(107,112,92,0.07) 0%, transparent 70%)',
           top: '10%',
           left: '20%',
           pointerEvents: 'none',
@@ -99,12 +99,12 @@ export default function LoginPage() {
               width: 56,
               height: 56,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+              background: 'linear-gradient(135deg, #6B705C, #A98467)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 1rem',
-              boxShadow: '0 8px 24px rgba(99,102,241,0.4)',
+              boxShadow: '0 8px 24px rgba(107, 112, 92, 0.35)',
             }}
           >
             <Camera size={24} style={{ color: '#FFFFFF' }} />
@@ -200,9 +200,9 @@ export default function LoginPage() {
         </form>
 
         <div style={{ display: 'flex', alignItems: 'center', margin: '1.5rem 0' }}>
-          <div style={{ flex: 1, height: 1, background: '#1E293B' }} />
-          <span style={{ padding: '0 1rem', color: '#64748B', fontSize: '0.85rem' }}>or</span>
-          <div style={{ flex: 1, height: 1, background: '#1E293B' }} />
+          <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
+          <span style={{ padding: '0 1rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>or</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
         </div>
 
         <button
@@ -218,7 +218,7 @@ export default function LoginPage() {
           }}
           className="btn btn-secondary"
           disabled={loading || googleLoading}
-          style={{ width: '100%', padding: '0.875rem', fontSize: '0.95rem', background: '#0F172A', color: '#F8FAFC', border: '1px solid #1E293B', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}
+          style={{ width: '100%', padding: '0.875rem', fontSize: '0.95rem', background: '#FFFFFF', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)', display: 'flex', justifyContent: 'center', gap: '0.5rem', borderRadius: '14px', boxShadow: 'var(--shadow-soft)', transition: 'var(--transition-smooth)' }}
         >
           {googleLoading ? (
             <><div className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> Connecting to Google…</>
@@ -232,11 +232,11 @@ export default function LoginPage() {
 
         <hr className="divider" />
 
-        <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: '0.875rem' }}>
+        <p style={{ textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
           Don't have an account?{' '}
           <Link
             to="/register"
-            style={{ color: '#A5B4FC', fontWeight: 600, textDecoration: 'none' }}
+            style={{ color: 'var(--color-accent)', fontWeight: 600, textDecoration: 'none' }}
             id="goto-register-link"
           >
             Create one free

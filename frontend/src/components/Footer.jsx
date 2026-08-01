@@ -67,13 +67,13 @@ export default function Footer() {
                 marginBottom: '0.875rem',
               }}
             >
-              <Camera size={20} style={{ color: '#6366F1' }} />
+              <Camera size={20} style={{ color: 'var(--color-accent)' }} />
               <span
                 style={{
                   fontFamily: 'Poppins, sans-serif',
                   fontWeight: 700,
                   fontSize: '1.1rem',
-                  background: 'linear-gradient(90deg, #6366F1, #F59E0B)',
+                  background: 'linear-gradient(90deg, #6B705C, #A98467)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                 }}
